@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const db = require('./database');
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 const SECRET_KEY = 'your-secret-key-change-this';
 
 app.use(cors());
@@ -190,6 +190,4 @@ app.get('/api/dashboard/stats', (req, res) => {
     });
 });
 
-app.listen(PORT, () => {
-    console.log(`✅ Backend server running on http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server on port ${PORT}`));
