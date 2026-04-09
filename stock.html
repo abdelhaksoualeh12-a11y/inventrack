@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Stock Management | InvenTrack</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="auth.js"></script>
+</head>
+
+<body>
+    <aside class="sidebar">
+        <h2><i class="fas fa-cubes"></i> InvenTrack</h2>
+        <a href="dashboard.html"><i class="fas fa-chart-line"></i> Dashboard</a>
+        <a href="products.html"><i class="fas fa-box"></i> Products</a>
+        <a href="categories.html"><i class="fas fa-tags"></i> Categories</a>
+        <a href="stock.html" class="active"><i class="fas fa-exchange-alt"></i> Stock</a>
+        <a href="suppliers.html"><i class="fas fa-truck-loading"></i> Suppliers</a>
+        <a href="reports.html"><i class="fas fa-file-invoice"></i> Reports</a>
+        <a href="users.html"><i class="fas fa-users-cog"></i> Users & Roles</a>
+        <a href="settings.html"><i class="fas fa-cog"></i> Settings</a>
+        <a href="index.html" style="margin-top: auto; border-top: 1px solid #1e293b; color: #ef4444;"><i
+                class="fas fa-sign-out-alt"></i> Logout</a>
+    </aside>
+
+    <main class="main-content">
+        <h1 class="page-header" style="margin-bottom: 2rem;">Stock Management</h1>
+
+        <div class="grid-2">
+            <!-- Stock In Box -->
+            <section class="box-section">
+                <h3 style="color: #10b981; border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem;"><i
+                        class="fas fa-arrow-down" style="margin-right: 0.5rem;"></i> Stock In</h3>
+
+                <form>
+                    <div class="form-group">
+                        <label>Select Product</label>
+                        <select required>
+                            <option value="">-- Choose Product --</option>
+                            <option>Dell XPS 15</option>
+                            <option>Monitor 24" 144Hz</option>
+                            <option>Mechanical Keyboard</option>
+                            <option>Wireless Ergonomic Mouse</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Quantity</label>
+                        <input type="number" required min="1" placeholder="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" required id="stockInDate">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Supplier <span style="font-weight: normal; color: #94a3b8;">(Optional)</span></label>
+                        <input type="text" placeholder="e.g. Dell Distributor LLC">
+                    </div>
+
+                    <button type="submit" class="btn-primary"
+                        style="background-color: #10b981; border: none; width: 100%; margin-top: 1.5rem; padding: 1rem; font-size: 1.1rem; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);">Record
+                        Stock In</button>
+                </form>
+            </section>
+
+            <!-- Stock Out Box -->
+            <section class="box-section">
+                <h3 style="color: #ef4444; border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem;"><i
+                        class="fas fa-arrow-up" style="margin-right: 0.5rem;"></i> Stock Out</h3>
+
+                <form>
+                    <div class="form-group">
+                        <label>Select Product</label>
+                        <select required>
+                            <option value="">-- Choose Product --</option>
+                            <option>Dell XPS 15</option>
+                            <option>Monitor 24" 144Hz</option>
+                            <option>Mechanical Keyboard</option>
+                            <option>Wireless Ergonomic Mouse</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Quantity</label>
+                        <input type="number" required min="1" placeholder="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Reason</label>
+                        <select required>
+                            <option value="">-- Choose Reason --</option>
+                            <option value="Sale">Sale</option>
+                            <option value="Usage">Internal Usage</option>
+                            <option value="Damage">Damage / Loss</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" required id="stockOutDate">
+                    </div>
+
+                    <button type="submit" class="btn-primary"
+                        style="background-color: #ef4444; border: none; width: 100%; margin-top: 1.5rem; padding: 1rem; font-size: 1.1rem; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);">Record
+                        Stock Out</button>
+                </form>
+            </section>
+        </div>
+
+        <!-- Recent Movements History Table -->
+        <section class="box-section" style="margin-top: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem; margin-bottom: 1rem;">
+                <h3 style="margin: 0;"><i class="fas fa-history" style="color:#3b82f6; margin-right:8px;"></i> Recent Movements History</h3>
+                <button id="clearHistoryBtn" class="btn-outline" style="color: #ef4444; border-color: #ef4444;"><i class="fas fa-trash-alt"></i> Clear</button>
+            </div>
+            <div style="overflow-x: auto;">
+                <table style="min-width: 800px;">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Product Name</th>
+                            <th>Type</th>
+                            <th>Quantity</th>
+                            <th>Details (Reason/Supplier)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <!-- History rows will go here -->
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: #94a3b8; padding: 2rem 0;">No recent movements recorded today.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Set dates to today by default for convenience
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('stockInDate').value = today;
+        document.getElementById('stockOutDate').value = today;
+
+        const historyBody = document.getElementById('historyTableBody');
+
+        // Prevent form default submissions and append to history dynamically
+        document.querySelectorAll('form').forEach((f, index) => {
+            f.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                // Remove the "No recent movements" placeholder if it exists
+                if (historyBody.children.length === 1 && historyBody.children[0].firstElementChild.colSpan === 5) {
+                    historyBody.innerHTML = '';
+                }
+
+                const product = f.querySelectorAll('select')[0].value;
+                const qty = f.querySelector('input[type="number"]').value;
+                const date = f.querySelector('input[type="date"]').value;
+                
+                let details = "";
+                let typeHtml = "";
+                
+                if (index === 0) { 
+                    // Stock In Logic
+                    typeHtml = '<span style="color: #10b981; font-weight: 600;"><i class="fas fa-arrow-down" style="margin-right: 4px;"></i> IN</span>';
+                    const supplier = f.querySelector('input[type="text"]').value;
+                    details = supplier ? "Supplier: " + supplier : "N/A";
+                } else { 
+                    // Stock Out Logic
+                    typeHtml = '<span style="color: #ef4444; font-weight: 600;"><i class="fas fa-arrow-up" style="margin-right: 4px;"></i> OUT</span>';
+                    const reasonSelect = f.querySelectorAll('select')[1];
+                    details = "Reason: " + reasonSelect.options[reasonSelect.selectedIndex].text;
+                }
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="color: #64748b;">${date}</td>
+                    <td style="font-weight: 600; color: #0f172a;">${product}</td>
+                    <td>${typeHtml}</td>
+                    <td>${qty}</td>
+                    <td style="color: #64748b;">${details}</td>
+                `;
+                
+                // Add to top of the history list
+                historyBody.prepend(tr);
+
+                // Reset forms
+                f.reset();
+                document.getElementById('stockInDate').value = today;
+                document.getElementById('stockOutDate').value = today;
+            });
+        });
+
+        // Handle Clear History
+        document.getElementById('clearHistoryBtn').addEventListener('click', () => {
+            if (confirm('Are you sure you want to completely clear the recent movements history?')) {
+                historyBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: #94a3b8; padding: 2rem 0;">No recent movements recorded today.</td>
+                    </tr>
+                `;
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Login | InvenTrack</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="login-bg">
+    <div class="login-wrapper">
+        <div class="login-header">
+            <i class="fas fa-cubes"></i>
+            <h2>InvenTrack</h2>
+            <p>Welcome back! Please login to your account.</p>
+        </div>
+        <form class="login-form" id="loginForm">
+            <div class="form-group">
+                <label>Login As Role</label>
+                <div class="input-icon">
+                    <i class="fas fa-user-shield"></i>
+                    <select id="roleSelect"
+                        style="width: 100%; padding: 0.8rem 1rem 0.8rem 2.8rem; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-family: inherit; font-size: 1rem;">
+                        <option value="Admin">Administrator</option>
+                        <option value="Manager">Manager</option>
+                        <option value="Staff">Staff</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Email Address</label>
+                <div class="input-icon">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" placeholder="admin@inventrack.com" required value="demo@inventrack.com">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <div class="input-icon">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" placeholder="••••••••" required value="password123">
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary login-btn">Sign In & Apply Permissions</button>
+        </form>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3001/api';
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.querySelector('input[type="email"]').value;
+            const password = document.querySelector('input[type="password"]').value;
+
+            const response = await fetch(`${API_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('userRole', data.user.role);
+
+                if (data.user.role === 'Staff') {
+                    window.location.href = 'products.html';
+                } else {
+                    window.location.href = 'dashboard.html';
+                }
+            } else {
+                alert('Login failed! Use admin@inventrack.com / admin123');
+            }
+        });
+    </script>
+    </div>
+</body>
+
+</html>

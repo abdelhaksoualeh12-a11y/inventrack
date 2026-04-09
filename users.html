@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>Users & Roles | InvenTrack</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .toolbar {
+            display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+            background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); margin-bottom: 2rem; gap: 1rem;
+        }
+        .search-wrapper { position: relative; width: 100%; max-width: 300px; }
+        .search-wrapper i { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #94a3b8; }
+        .search-wrapper input { padding-left: 2.5rem; width: 100%; }
+        
+        .table-actions button {
+            background: transparent; border: none; cursor: pointer; color: #64748b; font-size: 1.1rem; transition: color 0.2s; margin-right: 0.5rem; padding: 0;
+        }
+        .table-actions button:hover { color: #3b82f6; }
+        .table-actions button.del:hover { color: #ef4444; }
+
+        /* Modal Styles */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 1000; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; padding: 2.5rem; border-radius: 16px; width: 100%; max-width: 500px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); position: relative; max-height: 90vh; overflow-y: auto;}
+        .close-modal { position: absolute; top: 1.5rem; right: 1.5rem; cursor: pointer; color: #94a3b8; font-size: 1.25rem; transition: 0.2s; }
+        .close-modal:hover { color: #ef4444; }
+
+        .checkbox-group { display: flex; align-items: center; margin-bottom: 0.5rem; }
+        .checkbox-group input { width: auto; margin-right: 0.5rem; }
+        .checkbox-group label { margin-bottom: 0; font-weight: normal; font-size: 0.9rem; }
+    </style>
+    <script src="auth.js"></script>
+</head>
+<body>
+    <aside class="sidebar">
+        <h2><i class="fas fa-cubes"></i> InvenTrack</h2>
+        <a href="dashboard.html"><i class="fas fa-chart-line"></i> Dashboard</a>
+        <a href="products.html"><i class="fas fa-box"></i> Products</a>
+        <a href="categories.html"><i class="fas fa-tags"></i> Categories</a>
+        <a href="stock.html"><i class="fas fa-exchange-alt"></i> Stock</a>
+        <a href="suppliers.html"><i class="fas fa-truck-loading"></i> Suppliers</a>
+        <a href="reports.html"><i class="fas fa-file-invoice"></i> Reports</a>
+        <a href="users.html" class="active"><i class="fas fa-users-cog"></i> Users & Roles</a>
+        <a href="settings.html"><i class="fas fa-cog"></i> Settings</a>
+        <a href="index.html" style="margin-top: auto; border-top: 1px solid #1e293b; color: #ef4444;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </aside>
+
+    <main class="main-content">
+        <h1 class="page-header">Users & Permissions</h1>
+
+        <div class="toolbar">
+            <div class="search-wrapper">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Search users...">
+            </div>
+            <button id="addUserBtn" class="btn-primary" style="width: auto;"><i class="fas fa-user-plus"></i> Add User</button>
+        </div>
+
+        <section class="box-section">
+            <div style="overflow-x: auto;">
+                <table style="min-width: 600px;">
+                    <thead>
+                        <tr>
+                            <th>User Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th style="text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                        <tr>
+                            <td style="font-weight: 600; color: #0f172a;">Admin User</td>
+                            <td>admin@company.com</td>
+                            <td><span class="badge" style="background:#e0e7ff; color:#4f46e5;">Administrator</span></td>
+                            <td><span class="badge badge-success">Active</span></td>
+                            <td class="table-actions" style="text-align: right;">
+                                <button title="Edit"><i class="fas fa-edit"></i></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 600; color: #0f172a;">Sarah Manager</td>
+                            <td>sarah@company.com</td>
+                            <td><span class="badge" style="background:#fef3c7; color:#d97706;">Manager</span></td>
+                            <td><span class="badge badge-success">Active</span></td>
+                            <td class="table-actions" style="text-align: right;">
+                                <button title="Edit"><i class="fas fa-edit"></i></button>
+                                <button title="Delete" class="del"><i class="fas fa-trash-alt"></i></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="font-weight: 600; color: #0f172a;">John Staff</td>
+                            <td>john@company.com</td>
+                            <td><span class="badge" style="background:#f1f5f9; color:#475569;">Staff</span></td>
+                            <td><span class="badge badge-error">Inactive</span></td>
+                            <td class="table-actions" style="text-align: right;">
+                                <button title="Edit"><i class="fas fa-edit"></i></button>
+                                <button title="Delete" class="del"><i class="fas fa-trash-alt"></i></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeModalBtn"><i class="fas fa-times"></i></span>
+            <h2 id="modalTitle" style="margin-top: 0; margin-bottom: 1.5rem; color: #0f172a;">Add New User</h2>
+            <form id="userForm">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="userName" required placeholder="e.g. Ali Ahmad">
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="userEmail" required placeholder="ali@example.com">
+                </div>
+                <div class="form-group" style="display: flex; gap: 1rem;">
+                    <div style="flex: 1;">
+                        <label>Role</label>
+                        <select id="userRole">
+                            <option value="Staff">Staff</option>
+                            <option value="Manager">Manager</option>
+                            <option value="Administrator">Administrator</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Status</label>
+                        <select id="userStatus">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <label style="margin-top: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem;">Direct Permissions</label>
+                <div class="checkbox-group"><input type="checkbox" checked id="perm1"><label for="perm1">View Products & Stock</label></div>
+                <div class="checkbox-group"><input type="checkbox" id="perm2"><label for="perm2">Add/Edit Details</label></div>
+                <div class="checkbox-group"><input type="checkbox" id="perm3"><label for="perm3">Delete Records</label></div>
+                <div class="checkbox-group"><input type="checkbox" id="perm4"><label for="perm4">View Financial Reports</label></div>
+
+                <button type="submit" class="btn-primary" style="margin-top: 1.5rem; padding: 0.8rem; font-size: 1.1rem;">Save User</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('userModal');
+        const addBtn = document.getElementById('addUserBtn');
+        const closeBtn = document.getElementById('closeModalBtn');
+        const form = document.getElementById('userForm');
+        const tableBody = document.getElementById('userTableBody');
+        const modalTitle = document.getElementById('modalTitle');
+        let editingRow = null;
+
+        addBtn.addEventListener('click', () => { editingRow = null; form.reset(); modalTitle.innerText = "Add New User"; modal.classList.add('active'); });
+        closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+        
+        tableBody.addEventListener('click', (e) => {
+            const btn = e.target.closest('button');
+            if (!btn) return;
+            const tr = btn.closest('tr');
+
+            if (btn.classList.contains('del')) {
+                if (confirm('Are you sure you want to delete this user?')) tr.remove();
+                return;
+            }
+            if (btn.title === 'Edit') {
+                editingRow = tr;
+                modalTitle.innerText = "Edit User";
+                const cells = tr.querySelectorAll('td');
+                document.getElementById('userName').value = cells[0].innerText;
+                document.getElementById('userEmail').value = cells[1].innerText;
+                document.getElementById('userRole').value = cells[2].innerText.trim();
+                document.getElementById('userStatus').value = cells[3].innerText.trim();
+                modal.classList.add('active');
+            }
+        });
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('userName').value;
+            const email = document.getElementById('userEmail').value;
+            const role = document.getElementById('userRole').value;
+            const status = document.getElementById('userStatus').value;
+            
+            let roleBadge = `<span class="badge" style="background:#f1f5f9; color:#475569;">Staff</span>`;
+            if(role === 'Administrator') roleBadge = `<span class="badge" style="background:#e0e7ff; color:#4f46e5;">Administrator</span>`;
+            if(role === 'Manager') roleBadge = `<span class="badge" style="background:#fef3c7; color:#d97706;">Manager</span>`;
+            
+            const statusBadge = status === 'Active' ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-error">Inactive</span>';
+
+            if (editingRow) {
+                const cells = editingRow.querySelectorAll('td');
+                cells[0].innerText = name;
+                cells[1].innerText = email;
+                cells[2].innerHTML = roleBadge;
+                cells[3].innerHTML = statusBadge;
+            } else {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td style="font-weight: 600; color: #0f172a;">${name}</td><td>${email}</td><td>${roleBadge}</td><td>${statusBadge}</td><td class="table-actions" style="text-align: right;"><button title="Edit"><i class="fas fa-edit"></i></button> <button title="Delete" class="del"><i class="fas fa-trash-alt"></i></button></td>`;
+                tableBody.append(tr);
+            }
+            modal.classList.remove('active');
+            form.reset();
+            editingRow = null;
+        });
+    </script>
+</body>
+</html>
