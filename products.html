@@ -287,40 +287,50 @@
 
     <!-- Script to handle Modal, Add, Edit, and Delete Product logic -->
     <script>
-        // Replace the existing script in products.html with this:
+        const API_URL = 'https://inventrack-backend-2wso.onrender.com/api';
 
-        const API_URL = 'http://localhost:3001/api';
+        const modal = document.getElementById('addProductModal');
+        const addBtn = document.getElementById('addProdBtn');
+        const closeBtn = document.getElementById('closeModalBtn');
+        const form = document.getElementById('addProductForm');
+        const tableBody = document.getElementById('productTableBody');
+
+        let editingRow = null;
+        let editingId = null;
 
         // Load products from backend
         async function loadProducts() {
-            const response = await fetch(`${API_URL}/products`);
-            const products = await response.json();
+            try {
+                const response = await fetch(`${API_URL}/products`);
+                const products = await response.json();
 
-            const tableBody = document.getElementById('productTableBody');
-            tableBody.innerHTML = '';
-
-            products.forEach(product => {
-                const tr = document.createElement('tr');
-                tr.dataset.id = product.id;
-                tr.innerHTML = `
-            <td style="font-weight: 600; color: #0f172a;">${product.name}</td>
-            <td style="color: #64748b;">${product.sku}</td>
-            <td>${product.category}</td>
-            <td>${product.quantity}</td>
-            <td>$${product.price.toFixed(2)}</td>
-            <td style="font-weight: 600; color: #475569;">${product.status}</td>
-            <td style="color: #64748b;">${product.created_date}</td>
-            <td class="table-actions" style="text-align: right;">
-                <button title="Edit Product" onclick="editProduct(${product.id})"><i class="fas fa-edit"></i></button>
-                <button title="Delete Product" class="del" onclick="deleteProduct(${product.id})"><i class="fas fa-trash-alt"></i></button>
-            </td>
-        `;
-                tableBody.appendChild(tr);
-            });
+                tableBody.innerHTML = '';
+                products.forEach(product => {
+                    const tr = document.createElement('tr');
+                    tr.dataset.id = product.id;
+                    tr.innerHTML = `
+                    <td style="font-weight: 600; color: #0f172a;">${product.name}</td>
+                    <td style="color: #64748b;">${product.sku}</td>
+                    <td>${product.category}</td>
+                    <td>${product.quantity}</td>
+                    <td>$${parseFloat(product.price).toFixed(2)}</td>
+                    <td style="font-weight: 600; color: #475569;">${product.status}</td>
+                    <td style="color: #64748b;">${product.created_date}</td>
+                    <td class="table-actions" style="text-align: right;">
+                        <button title="Edit Product" onclick='editProduct(${JSON.stringify(product)})'><i class="fas fa-edit"></i></button>
+                        <button title="Delete Product" class="del" onclick="deleteProduct(${product.id})"><i class="fas fa-trash-alt"></i></button>
+                    </td>
+                `;
+                    tableBody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to load products. Check if backend is running.');
+            }
         }
 
-        // Add product
-        document.getElementById('addProductForm')?.addEventListener('submit', async (e) => {
+        // Add/Update product
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const product = {
@@ -332,25 +342,74 @@
                 alert_qty: parseInt(document.getElementById('prodAlertQty').value)
             };
 
-            await fetch(`${API_URL}/products`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(product)
-            });
+            try {
+                let response;
+                if (editingId) {
+                    response = await fetch(`${API_URL}/products/${editingId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(product)
+                    });
+                } else {
+                    response = await fetch(`${API_URL}/products`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json' },
+                        body: JSON.stringify(product)
+                    });
+                }
 
-            loadProducts();
-            modal.classList.remove('active');
+                if (response.ok) {
+                    await loadProducts();
+                    modal.classList.remove('active');
+                    form.reset();
+                    editingId = null;
+                }
+            } catch (error) {
+                console.error('Error saving product:', error);
+                alert('Failed to save product');
+            }
         });
 
         // Delete product
-        async function deleteProduct(id) {
-            if (confirm('Are you sure?')) {
-                await fetch(`${API_URL}/products/${id}`, { method: 'DELETE' });
-                loadProducts();
+        window.deleteProduct = async (id) => {
+            if (confirm('Are you sure you want to delete this product?')) {
+                try {
+                    await fetch(`${API_URL}/products/${id}`, { method: 'DELETE' });
+                    await loadProducts();
+                } catch (error) {
+                    console.error('Error deleting product:', error);
+                    alert('Failed to delete product');
+                }
             }
-        }
+        };
 
-        // Load on page load
+        // Edit product
+        window.editProduct = (product) => {
+            editingId = product.id;
+            document.getElementById('prodName').value = product.name;
+            document.getElementById('prodSKU').value = product.sku;
+            document.getElementById('prodCategory').value = product.category;
+            document.getElementById('prodQuantity').value = product.quantity;
+            document.getElementById('prodPrice').value = product.price;
+            document.getElementById('prodAlertQty').value = product.alert_qty || 10;
+            document.querySelector('#addProductModal h2').innerText = "Edit Product";
+            modal.classList.add('active');
+        };
+
+        // Modal controls
+        addBtn.addEventListener('click', () => {
+            editingId = null;
+            form.reset();
+            document.querySelector('#addProductModal h2').innerText = "Add New Product";
+            modal.classList.add('active');
+        });
+
+        closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) modal.classList.remove('active');
+        });
+
+        // Load products on page load
         loadProducts();
     </script>
 </body>

@@ -112,9 +112,12 @@
 
         <!-- Recent Movements History Table -->
         <section class="box-section" style="margin-top: 2rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem; margin-bottom: 1rem;">
-                <h3 style="margin: 0;"><i class="fas fa-history" style="color:#3b82f6; margin-right:8px;"></i> Recent Movements History</h3>
-                <button id="clearHistoryBtn" class="btn-outline" style="color: #ef4444; border-color: #ef4444;"><i class="fas fa-trash-alt"></i> Clear</button>
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem; margin-bottom: 1rem;">
+                <h3 style="margin: 0;"><i class="fas fa-history" style="color:#3b82f6; margin-right:8px;"></i> Recent
+                    Movements History</h3>
+                <button id="clearHistoryBtn" class="btn-outline" style="color: #ef4444; border-color: #ef4444;"><i
+                        class="fas fa-trash-alt"></i> Clear</button>
             </div>
             <div style="overflow-x: auto;">
                 <table style="min-width: 800px;">
@@ -130,7 +133,8 @@
                     <tbody id="historyTableBody">
                         <!-- History rows will go here -->
                         <tr>
-                            <td colspan="5" style="text-align: center; color: #94a3b8; padding: 2rem 0;">No recent movements recorded today.</td>
+                            <td colspan="5" style="text-align: center; color: #94a3b8; padding: 2rem 0;">No recent
+                                movements recorded today.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -139,71 +143,180 @@
     </main>
 
     <script>
-        // Set dates to today by default for convenience
+        const API_URL = 'https://inventrack-backend-2wso.onrender.com/api';
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('stockInDate').value = today;
         document.getElementById('stockOutDate').value = today;
 
         const historyBody = document.getElementById('historyTableBody');
 
-        // Prevent form default submissions and append to history dynamically
-        document.querySelectorAll('form').forEach((f, index) => {
-            f.addEventListener('submit', (e) => {
-                e.preventDefault();
-                
-                // Remove the "No recent movements" placeholder if it exists
-                if (historyBody.children.length === 1 && historyBody.children[0].firstElementChild.colSpan === 5) {
-                    historyBody.innerHTML = '';
+        // Load stock movements from backend
+        async function loadMovements() {
+            try {
+                const response = await fetch(`${API_URL}/stock-movements`);
+                const movements = await response.json();
+
+                if (movements.length === 0) {
+                    historyBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 2rem 0;">No recent movements recorded.</td></tr>`;
+                    return;
                 }
 
-                const product = f.querySelectorAll('select')[0].value;
-                const qty = f.querySelector('input[type="number"]').value;
-                const date = f.querySelector('input[type="date"]').value;
-                
-                let details = "";
-                let typeHtml = "";
-                
-                if (index === 0) { 
-                    // Stock In Logic
-                    typeHtml = '<span style="color: #10b981; font-weight: 600;"><i class="fas fa-arrow-down" style="margin-right: 4px;"></i> IN</span>';
-                    const supplier = f.querySelector('input[type="text"]').value;
-                    details = supplier ? "Supplier: " + supplier : "N/A";
-                } else { 
-                    // Stock Out Logic
-                    typeHtml = '<span style="color: #ef4444; font-weight: 600;"><i class="fas fa-arrow-up" style="margin-right: 4px;"></i> OUT</span>';
-                    const reasonSelect = f.querySelectorAll('select')[1];
-                    details = "Reason: " + reasonSelect.options[reasonSelect.selectedIndex].text;
-                }
-                
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="color: #64748b;">${date}</td>
-                    <td style="font-weight: 600; color: #0f172a;">${product}</td>
+                historyBody.innerHTML = '';
+                movements.forEach(m => {
+                    const tr = document.createElement('tr');
+                    const typeHtml = m.type === 'IN'
+                        ? '<span style="color: #10b981; font-weight: 600;"><i class="fas fa-arrow-down" style="margin-right: 4px;"></i> IN</span>'
+                        : '<span style="color: #ef4444; font-weight: 600;"><i class="fas fa-arrow-up" style="margin-right: 4px;"></i> OUT</span>';
+
+                    tr.innerHTML = `
+                    <td style="color: #64748b;">${m.date}</td>
+                    <td style="font-weight: 600; color: #0f172a;">${escapeHtml(m.product_name)}</td>
                     <td>${typeHtml}</td>
-                    <td>${qty}</td>
-                    <td style="color: #64748b;">${details}</td>
+                    <td>${m.quantity}</td>
+                    <td style="color: #64748b;">${escapeHtml(m.details || 'N/A')}</td>
                 `;
-                
-                // Add to top of the history list
-                historyBody.prepend(tr);
+                    historyBody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Error loading movements:', error);
+            }
+        }
 
-                // Reset forms
-                f.reset();
-                document.getElementById('stockInDate').value = today;
-                document.getElementById('stockOutDate').value = today;
+        // Load products for dropdowns
+        async function loadProductsForDropdowns() {
+            try {
+                const response = await fetch(`${API_URL}/products`);
+                const products = await response.json();
+
+                // Update both Stock In and Stock Out dropdowns
+                const selects = document.querySelectorAll('form select');
+                selects.forEach(select => {
+                    if (select.closest('.box-section')) {
+                        const currentValue = select.value;
+                        select.innerHTML = '<option value="">-- Choose Product --</option>';
+                        products.forEach(p => {
+                            const option = document.createElement('option');
+                            option.value = p.id;
+                            option.textContent = p.name;
+                            select.appendChild(option);
+                        });
+                        if (currentValue) select.value = currentValue;
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading products:', error);
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function (m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
             });
-        });
+        }
 
-        // Handle Clear History
-        document.getElementById('clearHistoryBtn').addEventListener('click', () => {
-            if (confirm('Are you sure you want to completely clear the recent movements history?')) {
-                historyBody.innerHTML = `
-                    <tr>
-                        <td colspan="5" style="text-align: center; color: #94a3b8; padding: 2rem 0;">No recent movements recorded today.</td>
-                    </tr>
-                `;
+        // Handle Stock In form
+        const stockInForm = document.querySelector('.grid-2 .box-section:first-child form');
+        stockInForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const productSelect = stockInForm.querySelector('select');
+            const productId = productSelect.value;
+            const productName = productSelect.options[productSelect.selectedIndex]?.text;
+            const qty = parseInt(stockInForm.querySelector('input[type="number"]').value);
+            const date = stockInForm.querySelector('input[type="date"]').value;
+            const supplier = stockInForm.querySelector('input[type="text"]').value;
+
+            if (!productId || !qty) {
+                alert('Please select a product and enter quantity');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/stock-movements`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        product_id: parseInt(productId),
+                        product_name: productName,
+                        type: 'IN',
+                        quantity: qty,
+                        details: supplier ? `Supplier: ${supplier}` : 'Stock In'
+                    })
+                });
+
+                if (response.ok) {
+                    await loadMovements();
+                    stockInForm.reset();
+                    document.getElementById('stockInDate').value = today;
+                    alert('Stock In recorded successfully!');
+                } else {
+                    alert('Failed to record stock in');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error recording stock in');
             }
         });
+
+        // Handle Stock Out form
+        const stockOutForm = document.querySelector('.grid-2 .box-section:last-child form');
+        stockOutForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const productSelect = stockOutForm.querySelector('select');
+            const productId = productSelect.value;
+            const productName = productSelect.options[productSelect.selectedIndex]?.text;
+            const qty = parseInt(stockOutForm.querySelector('input[type="number"]').value);
+            const date = stockOutForm.querySelector('input[type="date"]').value;
+            const reasonSelect = stockOutForm.querySelectorAll('select')[1];
+            const reason = reasonSelect.options[reasonSelect.selectedIndex]?.text;
+
+            if (!productId || !qty) {
+                alert('Please select a product and enter quantity');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/stock-movements`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        product_id: parseInt(productId),
+                        product_name: productName,
+                        type: 'OUT',
+                        quantity: qty,
+                        details: `Reason: ${reason}`
+                    })
+                });
+
+                if (response.ok) {
+                    await loadMovements();
+                    stockOutForm.reset();
+                    document.getElementById('stockOutDate').value = today;
+                    alert('Stock Out recorded successfully!');
+                } else {
+                    alert('Failed to record stock out');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error recording stock out');
+            }
+        });
+
+        // Clear history (just clears display, not database)
+        document.getElementById('clearHistoryBtn').addEventListener('click', () => {
+            if (confirm('Clear the movement history display? (Database records will remain)')) {
+                historyBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 2rem 0;">No recent movements recorded.</td></tr>`;
+            }
+        });
+
+        // Load data on page load
+        loadProductsForDropdowns();
+        loadMovements();
     </script>
 </body>
 

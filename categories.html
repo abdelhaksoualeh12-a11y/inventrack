@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
+
 <head>
     <meta charset="UTF-8">
     <title>Categories | InvenTrack</title>
@@ -7,34 +8,99 @@
     <link rel="stylesheet" href="style.css">
     <style>
         .toolbar {
-            display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
-            background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); margin-bottom: 2rem; gap: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 1.25rem;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+            margin-bottom: 2rem;
+            gap: 1rem;
         }
-        .search-wrapper { position: relative; width: 100%; max-width: 300px; }
-        .search-wrapper i { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #94a3b8; }
-        .search-wrapper input { padding-left: 2.5rem; width: 100%; }
-        
+
+        .search-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .search-wrapper i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        .search-wrapper input {
+            padding-left: 2.5rem;
+            width: 100%;
+        }
+
         .table-actions button {
-            background: transparent; border: none; cursor: pointer; color: #64748b; font-size: 1.1rem; transition: color 0.2s; margin-right: 0.5rem; padding: 0;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: #64748b;
+            font-size: 1.1rem;
+            transition: color 0.2s;
+            margin-right: 0.5rem;
+            padding: 0;
         }
-        .table-actions button:hover { color: #3b82f6; }
-        .table-actions button.del:hover { color: #ef4444; }
+
+        .table-actions button:hover {
+            color: #3b82f6;
+        }
+
+        .table-actions button.del:hover {
+            color: #ef4444;
+        }
 
         /* Modal Styles */
         .modal {
-            display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 1000;
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
         }
-        .modal.active { display: flex; }
+
+        .modal.active {
+            display: flex;
+        }
+
         .modal-content {
-            background: white; padding: 2.5rem; border-radius: 16px; width: 100%; max-width: 500px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); position: relative;
+            background: white;
+            padding: 2.5rem;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            position: relative;
         }
-        .close-modal { 
-            position: absolute; top: 1.5rem; right: 1.5rem; cursor: pointer; color: #94a3b8; font-size: 1.25rem; transition: 0.2s;
+
+        .close-modal {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            cursor: pointer;
+            color: #94a3b8;
+            font-size: 1.25rem;
+            transition: 0.2s;
         }
-        .close-modal:hover { color: #ef4444; }
+
+        .close-modal:hover {
+            color: #ef4444;
+        }
     </style>
     <script src="auth.js"></script>
 </head>
+
 <body>
     <aside class="sidebar">
         <h2><i class="fas fa-cubes"></i> InvenTrack</h2>
@@ -46,7 +112,8 @@
         <a href="reports.html"><i class="fas fa-file-invoice"></i> Reports</a>
         <a href="users.html"><i class="fas fa-users-cog"></i> Users & Roles</a>
         <a href="settings.html"><i class="fas fa-cog"></i> Settings</a>
-        <a href="index.html" style="margin-top: auto; border-top: 1px solid #1e293b; color: #ef4444;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        <a href="index.html" style="margin-top: auto; border-top: 1px solid #1e293b; color: #ef4444;"><i
+                class="fas fa-sign-out-alt"></i> Logout</a>
     </aside>
 
     <main class="main-content">
@@ -58,7 +125,8 @@
                 <i class="fas fa-search"></i>
                 <input type="text" placeholder="Search categories...">
             </div>
-            <button id="addCatBtn" class="btn-primary" style="width: auto;"><i class="fas fa-plus"></i> Add Category</button>
+            <button id="addCatBtn" class="btn-primary" style="width: auto;"><i class="fas fa-plus"></i> Add
+                Category</button>
         </div>
 
         <!-- Categories Table -->
@@ -130,94 +198,140 @@
                     <label>Initial Products Count</label>
                     <input type="number" id="catProducts" min="0" value="0" placeholder="0">
                 </div>
-                <button type="submit" class="btn-primary" style="margin-top: 1rem; padding: 0.8rem; font-size: 1.1rem;">Save Category</button>
+                <button type="submit" class="btn-primary"
+                    style="margin-top: 1rem; padding: 0.8rem; font-size: 1.1rem;">Save Category</button>
             </form>
         </div>
     </div>
 
     <script>
+        const API_URL = 'https://inventrack-backend-2wso.onrender.com/api';
         const modal = document.getElementById('categoryModal');
         const addBtn = document.getElementById('addCatBtn');
         const closeBtn = document.getElementById('closeModalBtn');
         const form = document.getElementById('categoryForm');
         const tableBody = document.getElementById('categoryTableBody');
         const modalTitle = document.getElementById('modalTitle');
-        
-        let editingRow = null;
 
-        // Open Modal for New Category
+        let editingId = null;
+
+        // Load categories from backend
+        async function loadCategories() {
+            try {
+                const response = await fetch(`${API_URL}/categories`);
+                const categories = await response.json();
+
+                tableBody.innerHTML = '';
+                categories.forEach(category => {
+                    const tr = document.createElement('tr');
+                    tr.dataset.id = category.id;
+                    tr.innerHTML = `
+                    <td style="font-weight: 600;">${escapeHtml(category.name)}</td>
+                    <td style="color: #64748b;">${escapeHtml(category.description || '')}</td>
+                    <td>${category.total_products || 0}</td>
+                    <td style="color: #64748b;">${category.created_date || new Date().toISOString().split('T')[0]}</td>
+                    <td class="table-actions" style="text-align: right;">
+                        <button title="Edit Category" onclick='editCategory(${JSON.stringify(category)})'><i class="fas fa-edit"></i></button>
+                        <button title="Delete Category" class="del" onclick="deleteCategory(${category.id})"><i class="fas fa-trash-alt"></i></button>
+                    </td>
+                `;
+                    tableBody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Error loading categories:', error);
+                alert('Failed to load categories');
+            }
+        }
+
+        // Helper function to escape HTML
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function (m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        // Add/Update category
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const category = {
+                name: document.getElementById('catName').value,
+                description: document.getElementById('catDesc').value,
+                total_products: parseInt(document.getElementById('catProducts').value) || 0
+            };
+
+            try {
+                let response;
+                if (editingId) {
+                    response = await fetch(`${API_URL}/categories/${editingId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(category)
+                    });
+                } else {
+                    response = await fetch(`${API_URL}/categories`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(category)
+                    });
+                }
+
+                if (response.ok) {
+                    await loadCategories();
+                    modal.classList.remove('active');
+                    form.reset();
+                    editingId = null;
+                } else {
+                    alert('Failed to save category');
+                }
+            } catch (error) {
+                console.error('Error saving category:', error);
+                alert('Failed to save category');
+            }
+        });
+
+        // Delete category
+        window.deleteCategory = async (id) => {
+            if (confirm('Are you sure you want to delete this category?')) {
+                try {
+                    await fetch(`${API_URL}/categories/${id}`, { method: 'DELETE' });
+                    await loadCategories();
+                } catch (error) {
+                    console.error('Error deleting category:', error);
+                    alert('Failed to delete category');
+                }
+            }
+        };
+
+        // Edit category
+        window.editCategory = (category) => {
+            editingId = category.id;
+            document.getElementById('catName').value = category.name;
+            document.getElementById('catDesc').value = category.description || '';
+            document.getElementById('catProducts').value = category.total_products || 0;
+            modalTitle.innerText = "Edit Category";
+            modal.classList.add('active');
+        };
+
+        // Modal controls
         addBtn.addEventListener('click', () => {
-            editingRow = null;
+            editingId = null;
             form.reset();
             modalTitle.innerText = "Add New Category";
             modal.classList.add('active');
-        });
-
-        // Close Modal
+        }); 
         closeBtn.addEventListener('click', () => modal.classList.remove('active'));
         window.addEventListener('click', (e) => {
             if (e.target === modal) modal.classList.remove('active');
         });
-        
-        // Handle Edit & Delete 
-        tableBody.addEventListener('click', (e) => {
-            const btn = e.target.closest('button');
-            if (!btn) return;
-            const tr = btn.closest('tr');
 
-            if (btn.classList.contains('del')) {
-                if (confirm('Are you sure you want to delete this category?')) {
-                    tr.remove();
-                }
-                return;
-            }
-            
-            if (btn.title === 'Edit Category') {
-                editingRow = tr;
-                modalTitle.innerText = "Edit Category";
-                
-                const cells = tr.querySelectorAll('td');
-                document.getElementById('catName').value = cells[0].innerText;
-                document.getElementById('catDesc').value = cells[1].innerText;
-                document.getElementById('catProducts').value = cells[2].innerText;
-                
-                modal.classList.add('active');
-            }
-        });
-
-        // Handle Form Submission
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const name = document.getElementById('catName').value;
-            const desc = document.getElementById('catDesc').value;
-            const prods = document.getElementById('catProducts').value;
-            
-            if (editingRow) {
-                const cells = editingRow.querySelectorAll('td');
-                cells[0].innerText = name;
-                cells[1].innerText = desc;
-                cells[2].innerText = prods;
-            } else {
-                const date = new Date().toISOString().split('T')[0];
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="font-weight: 600;">${name}</td>
-                    <td style="color: #64748b;">${desc}</td>
-                    <td>${prods}</td>
-                    <td style="color: #64748b;">${date}</td>
-                    <td class="table-actions" style="text-align: right;">
-                        <button title="Edit Category"><i class="fas fa-edit"></i></button>
-                        <button title="Delete Category" class="del"><i class="fas fa-trash-alt"></i></button>
-                    </td>
-                `;
-                tableBody.prepend(tr);
-            }
-            
-            modal.classList.remove('active');
-            form.reset();
-            editingRow = null;
-        });
+        // Load categories on page load
+        loadCategories();
     </script>
 </body>
+
 </html>

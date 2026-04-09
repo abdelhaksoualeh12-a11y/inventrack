@@ -189,5 +189,42 @@ app.get('/api/dashboard/stats', (req, res) => {
         });
     });
 });
+// ============ USERS ============
+app.get('/api/users', (req, res) => {
+    db.all("SELECT id, name, email, role, status, created_at FROM users", [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/users', (req, res) => {
+    const { name, email, role, status } = req.body;
+    const bcrypt = require('bcrypt');
+    const defaultPassword = bcrypt.hashSync('password123', 10);
+    
+    db.run(`INSERT INTO users (name, email, password, role, status) VALUES (?, ?, ?, ?, ?)`,
+        [name, email, defaultPassword, role, status || 'Active'],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID });
+        });
+});
+
+app.put('/api/users/:id', (req, res) => {
+    const { name, email, role, status } = req.body;
+    db.run(`UPDATE users SET name=?, email=?, role=?, status=? WHERE id=?`,
+        [name, email, role, status, req.params.id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: 'User updated' });
+        });
+});
+
+app.delete('/api/users/:id', (req, res) => {
+    db.run(`DELETE FROM users WHERE id=? AND role != 'Administrator'`, req.params.id, function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'User deleted' });
+    });
+});
 
 app.listen(PORT, () => console.log(`Server on port ${PORT}`));

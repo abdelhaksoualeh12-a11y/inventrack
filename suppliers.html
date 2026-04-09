@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
+
 <head>
     <meta charset="UTF-8">
     <title>Suppliers | InvenTrack</title>
@@ -7,34 +8,99 @@
     <link rel="stylesheet" href="style.css">
     <style>
         .toolbar {
-            display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
-            background: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1); margin-bottom: 2rem; gap: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 1.25rem;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+            margin-bottom: 2rem;
+            gap: 1rem;
         }
-        .search-wrapper { position: relative; width: 100%; max-width: 300px; }
-        .search-wrapper i { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #94a3b8; }
-        .search-wrapper input { padding-left: 2.5rem; width: 100%; }
-        
+
+        .search-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .search-wrapper i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        .search-wrapper input {
+            padding-left: 2.5rem;
+            width: 100%;
+        }
+
         .table-actions button {
-            background: transparent; border: none; cursor: pointer; color: #64748b; font-size: 1.1rem; transition: color 0.2s; margin-right: 0.5rem; padding: 0;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: #64748b;
+            font-size: 1.1rem;
+            transition: color 0.2s;
+            margin-right: 0.5rem;
+            padding: 0;
         }
-        .table-actions button:hover { color: #3b82f6; }
-        .table-actions button.del:hover { color: #ef4444; }
+
+        .table-actions button:hover {
+            color: #3b82f6;
+        }
+
+        .table-actions button.del:hover {
+            color: #ef4444;
+        }
 
         /* Modal Styles */
         .modal {
-            display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); align-items: center; justify-content: center; z-index: 1000;
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
         }
-        .modal.active { display: flex; }
+
+        .modal.active {
+            display: flex;
+        }
+
         .modal-content {
-            background: white; padding: 2.5rem; border-radius: 16px; width: 100%; max-width: 500px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); position: relative;
+            background: white;
+            padding: 2.5rem;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            position: relative;
         }
-        .close-modal { 
-            position: absolute; top: 1.5rem; right: 1.5rem; cursor: pointer; color: #94a3b8; font-size: 1.25rem; transition: 0.2s;
+
+        .close-modal {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            cursor: pointer;
+            color: #94a3b8;
+            font-size: 1.25rem;
+            transition: 0.2s;
         }
-        .close-modal:hover { color: #ef4444; }
+
+        .close-modal:hover {
+            color: #ef4444;
+        }
     </style>
     <script src="auth.js"></script>
 </head>
+
 <body>
     <aside class="sidebar">
         <h2><i class="fas fa-cubes"></i> InvenTrack</h2>
@@ -46,7 +112,8 @@
         <a href="reports.html"><i class="fas fa-file-invoice"></i> Reports</a>
         <a href="users.html"><i class="fas fa-users-cog"></i> Users & Roles</a>
         <a href="settings.html"><i class="fas fa-cog"></i> Settings</a>
-        <a href="index.html" style="margin-top: auto; border-top: 1px solid #1e293b; color: #ef4444;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        <a href="index.html" style="margin-top: auto; border-top: 1px solid #1e293b; color: #ef4444;"><i
+                class="fas fa-sign-out-alt"></i> Logout</a>
     </aside>
 
     <main class="main-content">
@@ -58,7 +125,8 @@
                 <i class="fas fa-search"></i>
                 <input type="text" placeholder="Search suppliers...">
             </div>
-            <button id="addSupplierBtn" class="btn-primary" style="width: auto;"><i class="fas fa-plus"></i> Add Supplier</button>
+            <button id="addSupplierBtn" class="btn-primary" style="width: auto;"><i class="fas fa-plus"></i> Add
+                Supplier</button>
         </div>
 
         <!-- Suppliers Table -->
@@ -149,105 +217,147 @@
                         <option value="Inactive">Inactive</option>
                     </select>
                 </div>
-                <button type="submit" class="btn-primary" style="margin-top: 1rem; padding: 0.8rem; font-size: 1.1rem;">Save Supplier</button>
+                <button type="submit" class="btn-primary"
+                    style="margin-top: 1rem; padding: 0.8rem; font-size: 1.1rem;">Save Supplier</button>
             </form>
         </div>
     </div>
 
     <script>
+        const API_URL = 'https://inventrack-backend-2wso.onrender.com/api';
         const modal = document.getElementById('supplierModal');
         const addBtn = document.getElementById('addSupplierBtn');
         const closeBtn = document.getElementById('closeModalBtn');
         const form = document.getElementById('supplierForm');
         const tableBody = document.getElementById('supplierTableBody');
         const modalTitle = document.getElementById('modalTitle');
-        
-        let editingRow = null;
 
-        // Open Modal for New Supplier
+        let editingId = null;
+
+        // Load suppliers from backend
+        async function loadSuppliers() {
+            try {
+                const response = await fetch(`${API_URL}/suppliers`);
+                const suppliers = await response.json();
+
+                tableBody.innerHTML = '';
+                suppliers.forEach(supplier => {
+                    const tr = document.createElement('tr');
+                    tr.dataset.id = supplier.id;
+                    const statusBadge = supplier.status === 'Active' ?
+                        '<span class="badge badge-success">Active</span>' :
+                        '<span class="badge badge-error">Inactive</span>';
+
+                    tr.innerHTML = `
+                    <td style="font-weight: 600; color: #0f172a;">${escapeHtml(supplier.name)}</td>
+                    <td>${escapeHtml(supplier.contact_person || '')}</td>
+                    <td>${escapeHtml(supplier.email || '')}</td>
+                    <td>${escapeHtml(supplier.phone || '')}</td>
+                    <td>${statusBadge}</td>
+                    <td class="table-actions" style="text-align: right;">
+                        <button title="Edit Supplier" onclick='editSupplier(${JSON.stringify(supplier)})'><i class="fas fa-edit"></i></button>
+                        <button title="Delete Supplier" class="del" onclick="deleteSupplier(${supplier.id})"><i class="fas fa-trash-alt"></i></button>
+                    </td>
+                `;
+                    tableBody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Error loading suppliers:', error);
+                alert('Failed to load suppliers');
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function (m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        // Add/Update supplier
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const supplier = {
+                name: document.getElementById('supName').value,
+                contact_person: document.getElementById('supContact').value,
+                email: document.getElementById('supEmail').value,
+                phone: document.getElementById('supPhone').value,
+                status: document.getElementById('supStatus').value
+            };
+
+            try {
+                let response;
+                if (editingId) {
+                    response = await fetch(`${API_URL}/suppliers/${editingId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(supplier)
+                    });
+                } else {
+                    response = await fetch(`${API_URL}/suppliers`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(supplier)
+                    });
+                }
+
+                if (response.ok) {
+                    await loadSuppliers();
+                    modal.classList.remove('active');
+                    form.reset();
+                    editingId = null;
+                } else {
+                    alert('Failed to save supplier');
+                }
+            } catch (error) {
+                console.error('Error saving supplier:', error);
+                alert('Failed to save supplier');
+            }
+        });
+
+        // Delete supplier
+        window.deleteSupplier = async (id) => {
+            if (confirm('Are you sure you want to delete this supplier?')) {
+                try {
+                    await fetch(`${API_URL}/suppliers/${id}`, { method: 'DELETE' });
+                    await loadSuppliers();
+                } catch (error) {
+                    console.error('Error deleting supplier:', error);
+                    alert('Failed to delete supplier');
+                }
+            }
+        };
+
+        // Edit supplier
+        window.editSupplier = (supplier) => {
+            editingId = supplier.id;
+            document.getElementById('supName').value = supplier.name;
+            document.getElementById('supContact').value = supplier.contact_person || '';
+            document.getElementById('supEmail').value = supplier.email || '';
+            document.getElementById('supPhone').value = supplier.phone || '';
+            document.getElementById('supStatus').value = supplier.status || 'Active';
+            modalTitle.innerText = "Edit Supplier";
+            modal.classList.add('active');
+        };
+
         addBtn.addEventListener('click', () => {
-            editingRow = null;
+            editingId = null;
             form.reset();
             modalTitle.innerText = "Add New Supplier";
             modal.classList.add('active');
         });
 
-        // Close Modal
         closeBtn.addEventListener('click', () => modal.classList.remove('active'));
         window.addEventListener('click', (e) => {
             if (e.target === modal) modal.classList.remove('active');
         });
-        
-        // Handle Edit & Delete 
-        tableBody.addEventListener('click', (e) => {
-            const btn = e.target.closest('button');
-            if (!btn) return;
-            const tr = btn.closest('tr');
 
-            if (btn.classList.contains('del')) {
-                if (confirm('Are you sure you want to delete this supplier?')) {
-                    tr.remove();
-                }
-                return;
-            }
-            
-            if (btn.title === 'Edit Supplier') {
-                editingRow = tr;
-                modalTitle.innerText = "Edit Supplier";
-                
-                const cells = tr.querySelectorAll('td');
-                document.getElementById('supName').value = cells[0].innerText;
-                document.getElementById('supContact').value = cells[1].innerText;
-                document.getElementById('supEmail').value = cells[2].innerText;
-                document.getElementById('supPhone').value = cells[3].innerText;
-                
-                // Status badge handling
-                const statusText = cells[4].innerText.trim();
-                document.getElementById('supStatus').value = statusText;
-                
-                modal.classList.add('active');
-            }
-        });
-
-        // Handle Form Submission
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const name = document.getElementById('supName').value;
-            const contact = document.getElementById('supContact').value;
-            const email = document.getElementById('supEmail').value;
-            const phone = document.getElementById('supPhone').value;
-            const status = document.getElementById('supStatus').value;
-            
-            const statusBadge = status === 'Active' ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-error">Inactive</span>';
-            
-            if (editingRow) {
-                const cells = editingRow.querySelectorAll('td');
-                cells[0].innerText = name;
-                cells[1].innerText = contact;
-                cells[2].innerText = email;
-                cells[3].innerText = phone;
-                cells[4].innerHTML = statusBadge;
-            } else {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="font-weight: 600; color: #0f172a;">${name}</td>
-                    <td>${contact}</td>
-                    <td>${email}</td>
-                    <td>${phone}</td>
-                    <td>${statusBadge}</td>
-                    <td class="table-actions" style="text-align: right;">
-                        <button title="Edit Supplier"><i class="fas fa-edit"></i></button>
-                        <button title="Delete Supplier" class="del"><i class="fas fa-trash-alt"></i></button>
-                    </td>
-                `;
-                tableBody.prepend(tr);
-            }
-            
-            modal.classList.remove('active');
-            form.reset();
-            editingRow = null;
-        });
+        loadSuppliers();
     </script>
 </body>
+
 </html>

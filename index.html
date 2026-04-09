@@ -46,9 +46,9 @@
             <button type="submit" class="btn-primary login-btn">Sign In & Apply Permissions</button>
         </form>
     </div>
-
+    
     <script>
-        const API_URL = 'http://localhost:3001/api';
+        const API_URL = 'https://inventrack-backend-2wso.onrender.com/api';
 
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -56,24 +56,30 @@
             const email = document.querySelector('input[type="email"]').value;
             const password = document.querySelector('input[type="password"]').value;
 
-            const response = await fetch(`${API_URL}/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
+            try {
+                const response = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
 
-            if (response.ok) {
-                const data = await response.json();
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('userRole', data.user.role);
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('userRole', data.user.role);
 
-                if (data.user.role === 'Staff') {
-                    window.location.href = 'products.html';
+                    // Redirect based on role
+                    if (data.user.role === 'Staff') {
+                        window.location.href = 'products.html';
+                    } else {
+                        window.location.href = 'dashboard.html';
+                    }
                 } else {
-                    window.location.href = 'dashboard.html';
+                    alert('Login failed! Use admin@inventrack.com / admin123');
                 }
-            } else {
-                alert('Login failed! Use admin@inventrack.com / admin123');
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Cannot connect to server.');
             }
         });
     </script>

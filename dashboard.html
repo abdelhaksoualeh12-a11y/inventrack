@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
+
 <head>
     <meta charset="UTF-8">
     <title>Dashboard | InvenTrack</title>
@@ -9,6 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="auth.js"></script>
 </head>
+
 <body>
     <aside class="sidebar">
         <h2><i class="fas fa-cubes"></i> InvenTrack</h2>
@@ -20,12 +22,13 @@
         <a href="reports.html"><i class="fas fa-file-invoice"></i> Reports</a>
         <a href="users.html"><i class="fas fa-users-cog"></i> Users & Roles</a>
         <a href="settings.html"><i class="fas fa-cog"></i> Settings</a>
-        <a href="index.html" style="margin-top: auto; border-top: 1px solid #1e293b; color: #ef4444;"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        <a href="index.html" style="margin-top: auto; border-top: 1px solid #1e293b; color: #ef4444;"><i
+                class="fas fa-sign-out-alt"></i> Logout</a>
     </aside>
 
     <main class="main-content">
         <h1 class="page-header">Dashboard Overview</h1>
-        
+
         <div class="grid-3" style="margin-bottom: 2rem;">
             <div class="card-stats" style="border-top-color: #3b82f6;">
                 <h3>Total Products</h3>
@@ -46,7 +49,8 @@
             <div class="card-stats" style="border-top-color: #06b6d4;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                     <h3 style="margin-bottom: 0;">Stock In</h3>
-                    <select style="width: auto; padding: 0.1rem 0.3rem; font-size: 0.75rem; border-color: #e2e8f0; color: #64748b; border-radius: 4px; background: transparent;">
+                    <select
+                        style="width: auto; padding: 0.1rem 0.3rem; font-size: 0.75rem; border-color: #e2e8f0; color: #64748b; border-radius: 4px; background: transparent;">
                         <option>Today</option>
                         <option selected>This Week</option>
                         <option>This Month</option>
@@ -57,7 +61,8 @@
             <div class="card-stats" style="border-top-color: #d946ef;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                     <h3 style="margin-bottom: 0;">Stock Out</h3>
-                    <select style="width: auto; padding: 0.1rem 0.3rem; font-size: 0.75rem; border-color: #e2e8f0; color: #64748b; border-radius: 4px; background: transparent;">
+                    <select
+                        style="width: auto; padding: 0.1rem 0.3rem; font-size: 0.75rem; border-color: #e2e8f0; color: #64748b; border-radius: 4px; background: transparent;">
                         <option>Today</option>
                         <option selected>This Week</option>
                         <option>This Month</option>
@@ -78,15 +83,17 @@
         <div class="grid-2" style="grid-template-columns: 1.5fr 1fr;">
             <!-- Simple Curve Chart using Chart.js -->
             <section class="box-section" style="margin-bottom: 0;">
-                <h3 style="margin-bottom: 1rem;"><i class="fas fa-chart-area" style="color:#3b82f6; margin-right:8px;"></i> Inventory Value Trend</h3>
+                <h3 style="margin-bottom: 1rem;"><i class="fas fa-chart-area"
+                        style="color:#3b82f6; margin-right:8px;"></i> Inventory Value Trend</h3>
                 <div style="height: 300px; width: 100%;">
                     <canvas id="inventoryCurve"></canvas>
                 </div>
             </section>
-            
+
             <!-- Simple Table Data -->
             <section class="box-section" style="margin-bottom: 0;">
-                <h3 style="margin-bottom: 1rem;"><i class="fas fa-table" style="color:#10b981; margin-right:8px;"></i> Recent Stock Movements</h3>
+                <h3 style="margin-bottom: 1rem;"><i class="fas fa-table" style="color:#10b981; margin-right:8px;"></i>
+                    Recent Stock Movements</h3>
                 <table>
                     <thead>
                         <tr>
@@ -130,7 +137,8 @@
         <div class="grid-2" style="grid-template-columns: 1fr 1fr; margin-top: 2rem;">
             <!-- Low Stock Items -->
             <section class="box-section" style="margin-bottom: 0;">
-                <h3 style="margin-bottom: 1rem;"><i class="fas fa-exclamation-triangle" style="color:#f59e0b; margin-right:8px;"></i> Low Stock Alerts</h3>
+                <h3 style="margin-bottom: 1rem;"><i class="fas fa-exclamation-triangle"
+                        style="color:#f59e0b; margin-right:8px;"></i> Low Stock Alerts</h3>
                 <table>
                     <thead>
                         <tr>
@@ -150,10 +158,11 @@
                     </tbody>
                 </table>
             </section>
-            
+
             <!-- Out of Stock Items -->
             <section class="box-section" style="margin-bottom: 0;">
-                <h3 style="margin-bottom: 1rem;"><i class="fas fa-times-circle" style="color:#ef4444; margin-right:8px;"></i> Out of Stock</h3>
+                <h3 style="margin-bottom: 1rem;"><i class="fas fa-times-circle"
+                        style="color:#ef4444; margin-right:8px;"></i> Out of Stock</h3>
                 <table>
                     <thead>
                         <tr>
@@ -175,7 +184,7 @@
     <!-- Chart Configuration Script -->
     <script>
         const ctx = document.getElementById('inventoryCurve').getContext('2d');
-        
+
         // Creating a vibrant gradient below the curve
         let gradient = ctx.createLinearGradient(0, 0, 0, 300);
         gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');
@@ -227,6 +236,65 @@
                 }
             }
         });
+        const API_URL = 'https://inventrack-backend-2wso.onrender.com/api';
+
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch(`${API_URL}/dashboard/stats`);
+                const stats = await response.json();
+
+                // Update the stats cards
+                const values = document.querySelectorAll('.card-stats .value');
+                if (values[0]) values[0].innerText = stats.total_products || 0;
+                if (values[1]) values[1].innerText = stats.total_stock || 0;
+                if (values[3]) values[3].innerText = stats.low_stock || 0;
+                if (values[7]) values[7].innerText = stats.total_categories || 0;
+
+                // Update out of stock
+                const outOfStockCard = document.querySelector('.card-stats[style*="border-top-color: #ef4444"] .value');
+                if (outOfStockCard) outOfStockCard.innerText = stats.out_of_stock || 0;
+            } catch (error) {
+                console.error('Error loading dashboard stats:', error);
+            }
+        }
+
+        // Also load recent stock movements
+        async function loadRecentMovements() {
+            try {
+                const response = await fetch(`${API_URL}/stock-movements`);
+                const movements = await response.json();
+
+                const tbody = document.querySelector('.grid-2 .box-section table tbody');
+                if (tbody && movements.length > 0) {
+                    tbody.innerHTML = '';
+                    movements.slice(0, 5).forEach(m => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                        <td>${escapeHtml(m.product_name)}</td>
+                        <td style="color: ${m.type === 'IN' ? '#10b981' : '#ef4444'}">${m.type}</td>
+                        <td>${m.type === 'IN' ? '+' : '-'}${m.quantity}</td>
+                    `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading movements:', error);
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function (m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        loadDashboardStats();
+        loadRecentMovements();
     </script>
 </body>
+
 </html>

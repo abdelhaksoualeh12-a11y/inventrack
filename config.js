@@ -1,0 +1,1 @@
+window.API_BASE_URL = 'https://inventrack-backend-2wso.onrender.com/api';
