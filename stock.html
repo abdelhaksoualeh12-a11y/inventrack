@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <script src="auth.js"></script>
+    <script src="validation.js"></script>
 </head>
 
 <body>
@@ -150,7 +151,16 @@
 
         const historyBody = document.getElementById('historyTableBody');
 
-        // Load stock movements from backend
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function (m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
         async function loadMovements() {
             try {
                 const response = await fetch(`${API_URL}/stock-movements`);
@@ -182,13 +192,11 @@
             }
         }
 
-        // Load products for dropdowns
         async function loadProductsForDropdowns() {
             try {
                 const response = await fetch(`${API_URL}/products`);
                 const products = await response.json();
 
-                // Update both Stock In and Stock Out dropdowns
                 const selects = document.querySelectorAll('form select');
                 selects.forEach(select => {
                     if (select.closest('.box-section')) {
@@ -208,16 +216,6 @@
             }
         }
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, function (m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            });
-        }
-
         // Handle Stock In form
         const stockInForm = document.querySelector('.grid-2 .box-section:first-child form');
         stockInForm.addEventListener('submit', async (e) => {
@@ -227,11 +225,10 @@
             const productId = productSelect.value;
             const productName = productSelect.options[productSelect.selectedIndex]?.text;
             const qty = parseInt(stockInForm.querySelector('input[type="number"]').value);
-            const date = stockInForm.querySelector('input[type="date"]').value;
             const supplier = stockInForm.querySelector('input[type="text"]').value;
 
-            if (!productId || !qty) {
-                alert('Please select a product and enter quantity');
+            if (!productId || !qty || qty <= 0) {
+                alert('Please select a product and enter a valid quantity');
                 return;
             }
 
@@ -250,6 +247,7 @@
 
                 if (response.ok) {
                     await loadMovements();
+                    await loadProductsForDropdowns();
                     stockInForm.reset();
                     document.getElementById('stockInDate').value = today;
                     alert('Stock In recorded successfully!');
@@ -271,12 +269,16 @@
             const productId = productSelect.value;
             const productName = productSelect.options[productSelect.selectedIndex]?.text;
             const qty = parseInt(stockOutForm.querySelector('input[type="number"]').value);
-            const date = stockOutForm.querySelector('input[type="date"]').value;
             const reasonSelect = stockOutForm.querySelectorAll('select')[1];
             const reason = reasonSelect.options[reasonSelect.selectedIndex]?.text;
 
-            if (!productId || !qty) {
-                alert('Please select a product and enter quantity');
+            if (!productId || !qty || qty <= 0) {
+                alert('Please select a product and enter a valid quantity');
+                return;
+            }
+
+            if (!reason || reason === '-- Choose Reason --') {
+                alert('Please select a reason');
                 return;
             }
 
@@ -295,11 +297,12 @@
 
                 if (response.ok) {
                     await loadMovements();
+                    await loadProductsForDropdowns();
                     stockOutForm.reset();
                     document.getElementById('stockOutDate').value = today;
                     alert('Stock Out recorded successfully!');
                 } else {
-                    alert('Failed to record stock out');
+                    alert('Failed to record stock out. Insufficient stock?');
                 }
             } catch (error) {
                 console.error('Error:', error);

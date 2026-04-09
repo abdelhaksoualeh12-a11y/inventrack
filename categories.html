@@ -6,6 +6,7 @@
     <title>Categories | InvenTrack</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <script src="validation.js"></script>
     <style>
         .toolbar {
             display: flex;
@@ -214,36 +215,8 @@
         const modalTitle = document.getElementById('modalTitle');
 
         let editingId = null;
+        let allCategories = [];
 
-        // Load categories from backend
-        async function loadCategories() {
-            try {
-                const response = await fetch(`${API_URL}/categories`);
-                const categories = await response.json();
-
-                tableBody.innerHTML = '';
-                categories.forEach(category => {
-                    const tr = document.createElement('tr');
-                    tr.dataset.id = category.id;
-                    tr.innerHTML = `
-                    <td style="font-weight: 600;">${escapeHtml(category.name)}</td>
-                    <td style="color: #64748b;">${escapeHtml(category.description || '')}</td>
-                    <td>${category.total_products || 0}</td>
-                    <td style="color: #64748b;">${category.created_date || new Date().toISOString().split('T')[0]}</td>
-                    <td class="table-actions" style="text-align: right;">
-                        <button title="Edit Category" onclick='editCategory(${JSON.stringify(category)})'><i class="fas fa-edit"></i></button>
-                        <button title="Delete Category" class="del" onclick="deleteCategory(${category.id})"><i class="fas fa-trash-alt"></i></button>
-                    </td>
-                `;
-                    tableBody.appendChild(tr);
-                });
-            } catch (error) {
-                console.error('Error loading categories:', error);
-                alert('Failed to load categories');
-            }
-        }
-
-        // Helper function to escape HTML
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/[&<>]/g, function (m) {
@@ -254,15 +227,72 @@
             });
         }
 
-        // Add/Update category
+        function validateCategory(category) {
+            if (!category.name || category.name.length < 2) {
+                alert('Category name must be at least 2 characters');
+                return false;
+            }
+            return true;
+        }
+
+        function renderCategories(categoriesToRender) {
+            tableBody.innerHTML = '';
+            if (categoriesToRender.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No categories found</td></tr>';
+                return;
+            }
+
+            categoriesToRender.forEach(category => {
+                const tr = document.createElement('tr');
+                tr.dataset.id = category.id;
+                tr.innerHTML = `
+                <td style="font-weight: 600;">${escapeHtml(category.name)}</td>
+                <td style="color: #64748b;">${escapeHtml(category.description || '')}</td>
+                <td>${category.total_products || 0}</td>
+                <td style="color: #64748b;">${category.created_date || new Date().toISOString().split('T')[0]}</td>
+                <td class="table-actions" style="text-align: right;">
+                    <button title="Edit Category" onclick='editCategory(${JSON.stringify(category)})'><i class="fas fa-edit"></i></button>
+                    <button title="Delete Category" class="del" onclick="deleteCategory(${category.id})"><i class="fas fa-trash-alt"></i></button>
+                </td>
+            `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function filterCategories() {
+            const searchInput = document.querySelector('.search-wrapper input');
+            const searchTerm = searchInput?.value.toLowerCase() || '';
+
+            const filtered = allCategories.filter(category =>
+                searchTerm === '' ||
+                category.name.toLowerCase().includes(searchTerm) ||
+                (category.description && category.description.toLowerCase().includes(searchTerm))
+            );
+
+            renderCategories(filtered);
+        }
+
+        async function loadCategories() {
+            try {
+                const response = await fetch(`${API_URL}/categories`);
+                allCategories = await response.json();
+                renderCategories(allCategories);
+            } catch (error) {
+                console.error('Error loading categories:', error);
+                alert('Failed to load categories');
+            }
+        }
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const category = {
-                name: document.getElementById('catName').value,
-                description: document.getElementById('catDesc').value,
+                name: document.getElementById('catName').value.trim(),
+                description: document.getElementById('catDesc').value.trim(),
                 total_products: parseInt(document.getElementById('catProducts').value) || 0
             };
+
+            if (!validateCategory(category)) return;
 
             try {
                 let response;
@@ -294,7 +324,6 @@
             }
         });
 
-        // Delete category
         window.deleteCategory = async (id) => {
             if (confirm('Are you sure you want to delete this category?')) {
                 try {
@@ -307,7 +336,6 @@
             }
         };
 
-        // Edit category
         window.editCategory = (category) => {
             editingId = category.id;
             document.getElementById('catName').value = category.name;
@@ -317,19 +345,22 @@
             modal.classList.add('active');
         };
 
-        // Modal controls
         addBtn.addEventListener('click', () => {
             editingId = null;
             form.reset();
             modalTitle.innerText = "Add New Category";
             modal.classList.add('active');
-        }); 
+        });
+
         closeBtn.addEventListener('click', () => modal.classList.remove('active'));
         window.addEventListener('click', (e) => {
             if (e.target === modal) modal.classList.remove('active');
         });
 
-        // Load categories on page load
+        // Add search listener
+        const searchInput = document.querySelector('.search-wrapper input');
+        if (searchInput) searchInput.addEventListener('input', filterCategories);
+
         loadCategories();
     </script>
 </body>

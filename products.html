@@ -6,6 +6,7 @@
     <title>Products | InvenTrack</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <script src="validation.js"></script>
     <style>
         .toolbar {
             display: flex;
@@ -295,38 +296,178 @@
         const form = document.getElementById('addProductForm');
         const tableBody = document.getElementById('productTableBody');
 
-        let editingRow = null;
         let editingId = null;
+        let allProducts = [];
+
+        // Helper Functions
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function (m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        function getStatusColor(status) {
+            switch (status) {
+                case 'In Stock': return '#10b981';
+                case 'Low Stock': return '#f59e0b';
+                case 'Out of Stock': return '#ef4444';
+                default: return '#475569';
+            }
+        }
+
+        function validateProduct(product) {
+            if (!product.name || product.name.length < 2) {
+                alert('Product name must be at least 2 characters');
+                return false;
+            }
+            if (!product.sku || product.sku.length < 3) {
+                alert('SKU must be at least 3 characters');
+                return false;
+            }
+            if (product.quantity < 0) {
+                alert('Quantity cannot be negative');
+                return false;
+            }
+            if (product.price <= 0) {
+                alert('Price must be greater than 0');
+                return false;
+            }
+            if (product.alert_qty < 1) {
+                alert('Low stock alert must be at least 1');
+                return false;
+            }
+            return true;
+        }
+
+        // Render products based on filtered list
+        function renderProducts(productsToRender) {
+            tableBody.innerHTML = '';
+            if (productsToRender.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem;">No products found</td></tr>';
+                return;
+            }
+
+            productsToRender.forEach(product => {
+                const tr = document.createElement('tr');
+                tr.dataset.id = product.id;
+                tr.innerHTML = `
+                <td style="font-weight: 600; color: #0f172a;">${escapeHtml(product.name)}</td>
+                <td style="color: #64748b;">${escapeHtml(product.sku)}</td>
+                <td>${escapeHtml(product.category)}</td>
+                <td>${product.quantity}</td>
+                <td>$${parseFloat(product.price).toFixed(2)}</td>
+                <td style="font-weight: 600; color: ${getStatusColor(product.status)};">${product.status}</td>
+                <td style="color: #64748b;">${product.created_date}</td>
+                <td class="table-actions" style="text-align: right;">
+                    <button title="Edit Product" onclick='editProduct(${JSON.stringify(product)})'><i class="fas fa-edit"></i></button>
+                    <button title="Delete Product" class="del" onclick="deleteProduct(${product.id})"><i class="fas fa-trash-alt"></i></button>
+                </td>
+            `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // Filter products based on search and dropdowns
+        function filterProducts() {
+            const searchInput = document.querySelector('.search-wrapper input');
+            const categorySelect = document.querySelector('.toolbar-group select:first-of-type');
+            const statusSelect = document.querySelector('.toolbar-group select:last-of-type');
+            const sortSelect = document.querySelector('.toolbar-group:last-child select');
+
+            const searchTerm = searchInput?.value.toLowerCase() || '';
+            const categoryFilter = categorySelect?.value || '';
+            const statusFilter = statusSelect?.value || '';
+            const sortBy = sortSelect?.value || 'name_asc';
+
+            let filtered = allProducts.filter(product => {
+                const matchesSearch = searchTerm === '' ||
+                    product.name.toLowerCase().includes(searchTerm) ||
+                    product.sku.toLowerCase().includes(searchTerm);
+
+                const matchesCategory = categoryFilter === '' || product.category === categoryFilter;
+
+                let matchesStatus = true;
+                if (statusFilter === 'in_stock') matchesStatus = product.status === 'In Stock';
+                else if (statusFilter === 'low_stock') matchesStatus = product.status === 'Low Stock';
+                else if (statusFilter === 'out_of_stock') matchesStatus = product.status === 'Out of Stock';
+
+                return matchesSearch && matchesCategory && matchesStatus;
+            });
+
+            // Apply sorting
+            filtered.sort((a, b) => {
+                switch (sortBy) {
+                    case 'name_asc': return a.name.localeCompare(b.name);
+                    case 'qty_desc': return b.quantity - a.quantity;
+                    case 'price_desc': return b.price - a.price;
+                    default: return 0;
+                }
+            });
+
+            renderProducts(filtered);
+        }
+
+        // Load categories into dropdowns
+        async function loadCategoriesForDropdowns() {
+            try {
+                const response = await fetch(`${API_URL}/categories`);
+                const categories = await response.json();
+
+                // Update product form category dropdown
+                const categorySelect = document.getElementById('prodCategory');
+                if (categorySelect) {
+                    while (categorySelect.options.length > 1) categorySelect.remove(1);
+                    categories.forEach(cat => {
+                        const option = document.createElement('option');
+                        option.value = cat.name;
+                        option.textContent = cat.name;
+                        categorySelect.appendChild(option);
+                    });
+                }
+
+                // Update filter category dropdown
+                const filterSelect = document.querySelector('.toolbar-group select:first-of-type');
+                if (filterSelect) {
+                    while (filterSelect.options.length > 1) filterSelect.remove(1);
+                    categories.forEach(cat => {
+                        const option = document.createElement('option');
+                        option.value = cat.name;
+                        option.textContent = cat.name;
+                        filterSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            }
+        }
 
         // Load products from backend
         async function loadProducts() {
             try {
                 const response = await fetch(`${API_URL}/products`);
-                const products = await response.json();
-
-                tableBody.innerHTML = '';
-                products.forEach(product => {
-                    const tr = document.createElement('tr');
-                    tr.dataset.id = product.id;
-                    tr.innerHTML = `
-                    <td style="font-weight: 600; color: #0f172a;">${product.name}</td>
-                    <td style="color: #64748b;">${product.sku}</td>
-                    <td>${product.category}</td>
-                    <td>${product.quantity}</td>
-                    <td>$${parseFloat(product.price).toFixed(2)}</td>
-                    <td style="font-weight: 600; color: #475569;">${product.status}</td>
-                    <td style="color: #64748b;">${product.created_date}</td>
-                    <td class="table-actions" style="text-align: right;">
-                        <button title="Edit Product" onclick='editProduct(${JSON.stringify(product)})'><i class="fas fa-edit"></i></button>
-                        <button title="Delete Product" class="del" onclick="deleteProduct(${product.id})"><i class="fas fa-trash-alt"></i></button>
-                    </td>
-                `;
-                    tableBody.appendChild(tr);
-                });
+                allProducts = await response.json();
+                renderProducts(allProducts);
             } catch (error) {
                 console.error('Error:', error);
                 alert('Failed to load products. Check if backend is running.');
             }
+        }
+
+        // Add filter event listeners
+        function addFilterEventListeners() {
+            const searchInput = document.querySelector('.search-wrapper input');
+            const categorySelect = document.querySelector('.toolbar-group select:first-of-type');
+            const statusSelect = document.querySelector('.toolbar-group select:last-of-type');
+            const sortSelect = document.querySelector('.toolbar-group:last-child select');
+
+            if (searchInput) searchInput.addEventListener('input', filterProducts);
+            if (categorySelect) categorySelect.addEventListener('change', filterProducts);
+            if (statusSelect) statusSelect.addEventListener('change', filterProducts);
+            if (sortSelect) sortSelect.addEventListener('change', filterProducts);
         }
 
         // Add/Update product
@@ -334,13 +475,15 @@
             e.preventDefault();
 
             const product = {
-                name: document.getElementById('prodName').value,
-                sku: document.getElementById('prodSKU').value,
+                name: document.getElementById('prodName').value.trim(),
+                sku: document.getElementById('prodSKU').value.trim(),
                 category: document.getElementById('prodCategory').value,
-                quantity: parseInt(document.getElementById('prodQuantity').value),
-                price: parseFloat(document.getElementById('prodPrice').value),
-                alert_qty: parseInt(document.getElementById('prodAlertQty').value)
+                quantity: parseInt(document.getElementById('prodQuantity').value) || 0,
+                price: parseFloat(document.getElementById('prodPrice').value) || 0,
+                alert_qty: parseInt(document.getElementById('prodAlertQty').value) || 10
             };
+
+            if (!validateProduct(product)) return;
 
             try {
                 let response;
@@ -353,16 +496,19 @@
                 } else {
                     response = await fetch(`${API_URL}/products`, {
                         method: 'POST',
-                        headers: {'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(product)
                     });
                 }
 
                 if (response.ok) {
                     await loadProducts();
+                    await loadCategoriesForDropdowns();
                     modal.classList.remove('active');
                     form.reset();
                     editingId = null;
+                } else {
+                    alert('Failed to save product');
                 }
             } catch (error) {
                 console.error('Error saving product:', error);
@@ -409,8 +555,10 @@
             if (e.target === modal) modal.classList.remove('active');
         });
 
-        // Load products on page load
+        // Initialize page
         loadProducts();
+        loadCategoriesForDropdowns();
+        addFilterEventListeners();
     </script>
 </body>
 

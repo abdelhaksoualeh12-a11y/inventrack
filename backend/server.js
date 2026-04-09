@@ -14,17 +14,17 @@ app.use(express.json());
 // ============ AUTHENTICATION ============
 app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
-    
+
     db.get("SELECT * FROM users WHERE email = ?", [email], (err, user) => {
         if (err || !user) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
-        
+
         const validPassword = bcrypt.compareSync(password, user.password);
         if (!validPassword) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
-        
+
         const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, SECRET_KEY);
         res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
     });
@@ -41,11 +41,11 @@ app.get('/api/products', (req, res) => {
 app.post('/api/products', (req, res) => {
     const { name, sku, category, quantity, price, alert_qty } = req.body;
     const status = quantity === 0 ? 'Out of Stock' : quantity <= alert_qty ? 'Low Stock' : 'In Stock';
-    
+
     db.run(`INSERT INTO products (name, sku, category, quantity, price, status, alert_qty) 
             VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [name, sku, category, quantity, price, status, alert_qty],
-        function(err) {
+        function (err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ id: this.lastID, message: 'Product added' });
         });
@@ -54,17 +54,17 @@ app.post('/api/products', (req, res) => {
 app.put('/api/products/:id', (req, res) => {
     const { name, sku, category, quantity, price, alert_qty } = req.body;
     const status = quantity === 0 ? 'Out of Stock' : quantity <= alert_qty ? 'Low Stock' : 'In Stock';
-    
+
     db.run(`UPDATE products SET name=?, sku=?, category=?, quantity=?, price=?, status=?, alert_qty=? WHERE id=?`,
         [name, sku, category, quantity, price, status, alert_qty, req.params.id],
-        function(err) {
+        function (err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ message: 'Product updated' });
         });
 });
 
 app.delete('/api/products/:id', (req, res) => {
-    db.run(`DELETE FROM products WHERE id=?`, req.params.id, function(err) {
+    db.run(`DELETE FROM products WHERE id=?`, req.params.id, function (err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Product deleted' });
     });
@@ -82,7 +82,7 @@ app.post('/api/categories', (req, res) => {
     const { name, description, total_products } = req.body;
     db.run(`INSERT INTO categories (name, description, total_products) VALUES (?, ?, ?)`,
         [name, description, total_products || 0],
-        function(err) {
+        function (err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ id: this.lastID, message: 'Category added' });
         });
@@ -92,14 +92,14 @@ app.put('/api/categories/:id', (req, res) => {
     const { name, description, total_products } = req.body;
     db.run(`UPDATE categories SET name=?, description=?, total_products=? WHERE id=?`,
         [name, description, total_products, req.params.id],
-        function(err) {
+        function (err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ message: 'Category updated' });
         });
 });
 
 app.delete('/api/categories/:id', (req, res) => {
-    db.run(`DELETE FROM categories WHERE id=?`, req.params.id, function(err) {
+    db.run(`DELETE FROM categories WHERE id=?`, req.params.id, function (err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Category deleted' });
     });
@@ -117,7 +117,7 @@ app.post('/api/suppliers', (req, res) => {
     const { name, contact_person, email, phone, status } = req.body;
     db.run(`INSERT INTO suppliers (name, contact_person, email, phone, status) VALUES (?, ?, ?, ?, ?)`,
         [name, contact_person, email, phone, status || 'Active'],
-        function(err) {
+        function (err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ id: this.lastID, message: 'Supplier added' });
         });
@@ -127,14 +127,14 @@ app.put('/api/suppliers/:id', (req, res) => {
     const { name, contact_person, email, phone, status } = req.body;
     db.run(`UPDATE suppliers SET name=?, contact_person=?, email=?, phone=?, status=? WHERE id=?`,
         [name, contact_person, email, phone, status, req.params.id],
-        function(err) {
+        function (err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ message: 'Supplier updated' });
         });
 });
 
 app.delete('/api/suppliers/:id', (req, res) => {
-    db.run(`DELETE FROM suppliers WHERE id=?`, req.params.id, function(err) {
+    db.run(`DELETE FROM suppliers WHERE id=?`, req.params.id, function (err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Supplier deleted' });
     });
@@ -150,23 +150,23 @@ app.get('/api/stock-movements', (req, res) => {
 
 app.post('/api/stock-movements', (req, res) => {
     const { product_id, product_name, type, quantity, details } = req.body;
-    
+
     db.run(`INSERT INTO stock_movements (product_id, product_name, type, quantity, details) VALUES (?, ?, ?, ?, ?)`,
         [product_id, product_name, type, quantity, details],
-        function(err) {
+        function (err) {
             if (err) return res.status(500).json({ error: err.message });
-            
+
             // Update product quantity
-            const updateQuery = type === 'IN' 
+            const updateQuery = type === 'IN'
                 ? `UPDATE products SET quantity = quantity + ? WHERE id = ?`
                 : `UPDATE products SET quantity = quantity - ? WHERE id = ? AND quantity >= ?`;
-            
+
             if (type === 'IN') {
                 db.run(updateQuery, [quantity, product_id]);
             } else {
                 db.run(updateQuery, [quantity, product_id, quantity]);
             }
-            
+
             res.json({ id: this.lastID, message: 'Stock movement recorded' });
         });
 });
@@ -201,10 +201,10 @@ app.post('/api/users', (req, res) => {
     const { name, email, role, status } = req.body;
     const bcrypt = require('bcrypt');
     const defaultPassword = bcrypt.hashSync('password123', 10);
-    
+
     db.run(`INSERT INTO users (name, email, password, role, status) VALUES (?, ?, ?, ?, ?)`,
         [name, email, defaultPassword, role, status || 'Active'],
-        function(err) {
+        function (err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ id: this.lastID });
         });
@@ -214,17 +214,23 @@ app.put('/api/users/:id', (req, res) => {
     const { name, email, role, status } = req.body;
     db.run(`UPDATE users SET name=?, email=?, role=?, status=? WHERE id=?`,
         [name, email, role, status, req.params.id],
-        function(err) {
+        function (err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ message: 'User updated' });
         });
 });
 
 app.delete('/api/users/:id', (req, res) => {
-    db.run(`DELETE FROM users WHERE id=? AND role != 'Administrator'`, req.params.id, function(err) {
+    db.run(`DELETE FROM users WHERE id=? AND role != 'Administrator'`, req.params.id, function (err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'User deleted' });
     });
 });
-
+// ============ INVENTORY VALUE ============
+app.get('/api/inventory-value', (req, res) => {
+    db.get("SELECT SUM(quantity * price) as total_value FROM products", (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ total_value: result.total_value || 0 });
+    });
+});
 app.listen(PORT, () => console.log(`Server on port ${PORT}`));
