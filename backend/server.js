@@ -351,5 +351,54 @@ app.get('/api/most-sold-products', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+// ============ DEBUG - Check database connection ============
+app.get('/api/debug', async (req, res) => {
+    try {
+        // Test database connection
+        const test = await db.get("SELECT 1 as connected", []);
+        res.json({ 
+            status: 'Database connected', 
+            test: test,
+            dbType: process.env.DATABASE_URL ? 'PostgreSQL' : 'SQLite'
+        });
+    } catch (error) {
+        res.json({ 
+            status: 'Database error', 
+            error: error.message,
+            stack: error.stack
+        });
+    }
+});
 
+// Debug users endpoint
+app.get('/api/debug/users', async (req, res) => {
+    try {
+        const users = await db.all("SELECT id, name, email, role FROM users", []);
+        res.json({ users, count: users.length });
+    } catch (error) {
+        res.json({ error: error.message });
+    }
+});
+// ============ CREATE ADMIN (Temporary) ============
+app.post('/api/setup-admin', async (req, res) => {
+    try {
+        // Check if admin exists
+        const existing = await db.get("SELECT * FROM users WHERE email = 'admin@inventrack.com'", []);
+        
+        if (existing) {
+            return res.json({ message: 'Admin already exists', user: existing });
+        }
+        
+        const hashedPassword = bcrypt.hashSync('admin123', 10);
+        const result = await db.run(
+            "INSERT INTO users (name, email, password, role, status) VALUES (?, ?, ?, ?, ?)",
+            ['Admin User', 'admin@inventrack.com', hashedPassword, 'Administrator', 'Active']
+        );
+        
+        res.json({ message: 'Admin created successfully', id: result.lastID });
+    } catch (error) {
+        console.error('Setup admin error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 app.listen(PORT, () => console.log(`Server on port ${PORT}`));

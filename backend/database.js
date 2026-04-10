@@ -11,14 +11,48 @@ if (process.env.DATABASE_URL) {
         ssl: { rejectUnauthorized: false }
     });
     
+    // Test connection on startup
+    pool.connect((err, client, release) => {
+        if (err) {
+            console.error('❌ Database connection failed:', err.message);
+        } else {
+            console.log('✅ Database connected successfully');
+            release();
+        }
+    });
+    
     db = {
         query: (text, params) => pool.query(text, params),
-        get: (text, params) => pool.query(text, params).then(res => res.rows[0]),
-        all: (text, params) => pool.query(text, params).then(res => res.rows),
-        run: (text, params) => pool.query(text, params)
+        get: async (text, params) => {
+            try {
+                const result = await pool.query(text, params);
+                return result.rows[0];
+            } catch (err) {
+                console.error('db.get error:', err);
+                throw err;
+            }
+        },
+        all: async (text, params) => {
+            try {
+                const result = await pool.query(text, params);
+                return result.rows;
+            } catch (err) {
+                console.error('db.all error:', err);
+                throw err;
+            }
+        },
+        run: async (text, params) => {
+            try {
+                const result = await pool.query(text, params);
+                return { lastID: result.rows[0]?.id };
+            } catch (err) {
+                console.error('db.run error:', err);
+                throw err;
+            }
+        }
     };
     
-    // Initialize tables - ONLY create tables, NO sample data
+    // Initialize tables
     async function initDatabase() {
         try {
             // Users table
@@ -90,7 +124,7 @@ if (process.env.DATABASE_URL) {
             `);
             console.log('✅ Stock movements table ready');
             
-            // Insert ONLY the default admin user (required for login)
+            // Insert admin user
             const result = await pool.query("SELECT * FROM users WHERE email = 'admin@inventrack.com'");
             if (result.rows.length === 0) {
                 const bcrypt = require('bcrypt');
@@ -99,17 +133,18 @@ if (process.env.DATABASE_URL) {
                     "INSERT INTO users (name, email, password, role, status) VALUES ($1, $2, $3, $4, $5)",
                     ['Admin User', 'admin@inventrack.com', hashedPassword, 'Administrator', 'Active']
                 );
-                console.log('✅ Default admin user created');
+                console.log('✅ Admin user created');
+            } else {
+                console.log('✅ Admin user already exists');
             }
             
-            console.log('🎉 Database initialization complete - ready for your data!');
+            console.log('🎉 Database ready!');
         } catch (err) {
             console.error('Database initialization error:', err);
         }
     }
     
-    initDatabase();
-    
+    initDatabase();  
 } else {
     // Local development - SQLite
     const sqlite3 = require('sqlite3').verbose();
