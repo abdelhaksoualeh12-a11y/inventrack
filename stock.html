@@ -221,7 +221,6 @@
                     await loadMovements();
                     await loadProductsForDropdowns();
                     stockInForm.reset();
-                    document.getElementById('stockInDate').value = today;
                     alert('Stock In recorded successfully!');
                 } else {
                     alert('Failed to record stock in');
@@ -271,7 +270,6 @@
                     await loadMovements();
                     await loadProductsForDropdowns();
                     stockOutForm.reset();
-                    document.getElementById('stockOutDate').value = today;
                     alert('Stock Out recorded successfully!');
                 } else {
                     alert('Failed to record stock out. Insufficient stock?');
