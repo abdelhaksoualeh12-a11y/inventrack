@@ -83,12 +83,19 @@
         </div>
 
         <div class="grid-2" style="grid-template-columns: 1.5fr 1fr;">
-            <!-- Simple Curve Chart using Chart.js -->
+            <!-- Most Sold Products Bar Chart -->
             <section class="box-section" style="margin-bottom: 0;">
-                <h3 style="margin-bottom: 1rem;"><i class="fas fa-chart-area"
-                        style="color:#3b82f6; margin-right:8px;"></i> Inventory Value Trend</h3>
-                <div style="height: 300px; width: 100%;">
-                    <canvas id="inventoryCurve"></canvas>
+                <h3 style="margin-bottom: 1rem;">
+                    <i class="fas fa-chart-bar" style="color:#3b82f6; margin-right:8px;"></i>
+                    Most Sold Products
+                    <select id="chartTimeRange" style="width: auto; margin-left: 1rem; padding: 0.25rem 0.5rem;">
+                        <option value="week">Last 7 Days</option>
+                        <option value="month" selected>Last 30 Days</option>
+                        <option value="year">Last 12 Months</option>
+                    </select>
+                </h3>
+                <div style="height: 400px; width: 100%;">
+                    <canvas id="salesChart"></canvas>
                 </div>
             </section>
 
@@ -182,107 +189,10 @@
             </section>
         </div>
     </main>
-
-    <!-- Chart Configuration Script -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        const ctx = document.getElementById('inventoryCurve').getContext('2d');
-
-        // Creating a vibrant gradient below the curve
-        let gradient = ctx.createLinearGradient(0, 0, 0, 300);
-        gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');
-        gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
-
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['January', 'February', 'March', 'April', 'May', 'June'],
-                datasets: [{
-                    label: 'Inventory Value ($)',
-                    data: [4200, 5800, 4800, 8500, 7200, 12450],
-                    borderColor: '#3b82f6', // Bright Blue
-                    backgroundColor: gradient,
-                    borderWidth: 3,
-                    tension: 0.4, // Gives the beautiful curve
-                    fill: true,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#3b82f6',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: '#0f172a',
-                        titleFont: { family: 'Inter', size: 14 },
-                        bodyFont: { family: 'Inter', size: 14 },
-                        padding: 12,
-                        displayColors: false,
-                        cornerRadius: 8
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { borderDash: [4, 4], color: '#e2e8f0' },
-                        border: { display: false }
-                    },
-                    x: {
-                        grid: { display: false },
-                        border: { display: false }
-                    }
-                }
-            }
-        });
         const API_URL = 'https://inventrack-backend-2wso.onrender.com/api';
-
-        async function loadDashboardStats() {
-            try {
-                const response = await fetch(`${API_URL}/dashboard/stats`);
-                const stats = await response.json();
-
-                // Update the stats cards
-                const values = document.querySelectorAll('.card-stats .value');
-                if (values[0]) values[0].innerText = stats.total_products || 0;
-                if (values[1]) values[1].innerText = stats.total_stock || 0;
-                if (values[3]) values[3].innerText = stats.low_stock || 0;
-                if (values[7]) values[7].innerText = stats.total_categories || 0;
-
-                // Update out of stock
-                const outOfStockCard = document.querySelector('.card-stats[style*="border-top-color: #ef4444"] .value');
-                if (outOfStockCard) outOfStockCard.innerText = stats.out_of_stock || 0;
-            } catch (error) {
-                console.error('Error loading dashboard stats:', error);
-            }
-        }
-
-        // Also load recent stock movements
-        async function loadRecentMovements() {
-            try {
-                const response = await fetch(`${API_URL}/stock-movements`);
-                const movements = await response.json();
-
-                const tbody = document.querySelector('.grid-2 .box-section table tbody');
-                if (tbody && movements.length > 0) {
-                    tbody.innerHTML = '';
-                    movements.slice(0, 5).forEach(m => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                        <td>${escapeHtml(m.product_name)}</td>
-                        <td style="color: ${m.type === 'IN' ? '#10b981' : '#ef4444'}">${m.type}</td>
-                        <td>${m.type === 'IN' ? '+' : '-'}${m.quantity}</td>
-                    `;
-                        tbody.appendChild(tr);
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading movements:', error);
-            }
-        }
+        let salesChart = null;
         let refreshInterval = null;
 
         function escapeHtml(str) {
@@ -293,6 +203,57 @@
                 if (m === '>') return '&gt;';
                 return m;
             });
+        }
+
+        async function loadMostSoldProducts(range = 'month') {
+            try {
+                const response = await fetch(`${API_URL}/most-sold-products?range=${range}`);
+                const data = await response.json();
+
+                const ctx = document.getElementById('salesChart').getContext('2d');
+
+                if (salesChart) salesChart.destroy();
+
+                salesChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.map(item => item.product_name),
+                        datasets: [{
+                            label: `Units Sold (${range === 'week' ? 'Last 7 Days' : range === 'month' ? 'Last 30 Days' : 'Last 12 Months'})`,
+                            data: data.map(item => item.total_sold),
+                            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                            borderColor: '#3b82f6',
+                            borderWidth: 2,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return `Sold: ${context.raw} units`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: { display: true, text: 'Units Sold' }
+                            },
+                            x: {
+                                title: { display: true, text: 'Product Name' }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading most sold products:', error);
+            }
         }
 
         async function loadDashboardStats() {
@@ -404,12 +365,18 @@
             await loadOutOfStockAlerts();
         }
 
+        // Chart time range change
+        document.getElementById('chartTimeRange')?.addEventListener('change', (e) => {
+            loadMostSoldProducts(e.target.value);
+        });
+
         // Auto-refresh every 30 seconds
         if (refreshInterval) clearInterval(refreshInterval);
         refreshInterval = setInterval(refreshDashboard, 30000);
 
         // Initial load
         refreshDashboard();
+        loadMostSoldProducts('month');
     </script>
 
 </body>

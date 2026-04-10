@@ -233,4 +233,35 @@ app.get('/api/inventory-value', (req, res) => {
         res.json({ total_value: result.total_value || 0 });
     });
 });
+// ============ MOST SOLD PRODUCTS ============
+app.get('/api/most-sold-products', (req, res) => {
+    const range = req.query.range || 'month';
+    let dateCondition = '';
+    
+    switch(range) {
+        case 'week':
+            dateCondition = "date >= date('now', '-7 days')";
+            break;
+        case 'month':
+            dateCondition = "date >= date('now', '-30 days')";
+            break;
+        case 'year':
+            dateCondition = "date >= date('now', '-365 days')";
+            break;
+        default:
+            dateCondition = "date >= date('now', '-30 days')";
+    }
+    
+    db.all(`
+        SELECT product_name, SUM(quantity) as total_sold 
+        FROM stock_movements 
+        WHERE type = 'OUT' AND ${dateCondition}
+        GROUP BY product_name 
+        ORDER BY total_sold DESC 
+        LIMIT 10
+    `, [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows || []);
+    });
+});
 app.listen(PORT, () => console.log(`Server on port ${PORT}`));
