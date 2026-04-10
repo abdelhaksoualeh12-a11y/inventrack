@@ -21,6 +21,7 @@
         <a href="reports.html"><i class="fas fa-file-invoice"></i> Reports</a>
         <a href="users.html"><i class="fas fa-users-cog"></i> Users & Roles</a>
         <a href="settings.html"><i class="fas fa-cog"></i> Settings</a>
+        <a href="change-password.html"><i class="fas fa-key"></i> Change Password</a>
         <a href="index.html" style="margin-top: auto; border-top: 1px solid #1e293b; color: #ef4444;"><i
                 class="fas fa-sign-out-alt"></i> Logout</a>
     </aside>
@@ -73,12 +74,17 @@
                     </div>
                     <div class="form-group">
                         <label>Reason</label>
-                        <select required>
-                            <option value="">-- Choose Reason --</option>
-                            <option value="Sale">Sale</option>
-                            <option value="Usage">Internal Usage</option>
-                            <option value="Damage">Damage / Loss</option>
-                        </select>
+                        <div class="form-group">
+                            <label>Reason</label>
+                            <select id="stockOutReason" required>
+                                <option value="">-- Choose Reason --</option>
+                                <option value="Sale">Sale</option>
+                                <option value="Internal Usage">Internal Usage</option>
+                                <option value="Damage / Loss">Damage / Loss</option>
+                                <option value="Transfer">Transfer to Other Location</option>
+                                <option value="Expired">Expired Products</option>
+                            </select>
+                        </div>
                     </div>
                     <button type="submit" class="btn-primary"
                         style="background-color: #ef4444; border: none; width: 100%; margin-top: 1.5rem; padding: 1rem; font-size: 1.1rem;">Record
@@ -133,6 +139,7 @@
             });
         }
 
+        // Load stock movement history
         async function loadMovements() {
             try {
                 const response = await fetch(`${API_URL}/stock-movements`);
@@ -164,6 +171,7 @@
             }
         }
 
+        // Load products for dropdowns with current stock info
         async function loadProductsForDropdowns() {
             try {
                 const response = await fetch(`${API_URL}/products`);
@@ -177,7 +185,8 @@
                         products.forEach(p => {
                             const option = document.createElement('option');
                             option.value = p.id;
-                            option.textContent = p.name;
+                            option.textContent = `${p.name} (Stock: ${p.quantity})`;
+                            option.dataset.quantity = p.quantity;
                             select.appendChild(option);
                         });
                         if (currentValue) select.value = currentValue;
@@ -195,12 +204,17 @@
 
             const productSelect = stockInForm.querySelector('select');
             const productId = productSelect.value;
-            const productName = productSelect.options[productSelect.selectedIndex]?.text;
+            const productName = productSelect.options[productSelect.selectedIndex]?.text.split(' (Stock:')[0];
             const qty = parseInt(stockInForm.querySelector('input[type="number"]').value);
             const supplier = stockInForm.querySelector('input[type="text"]').value;
 
-            if (!productId || !qty || qty <= 0) {
-                alert('Please select a product and enter a valid quantity');
+            // Validation
+            if (!productId) {
+                alert('Please select a product');
+                return;
+            }
+            if (!qty || qty <= 0) {
+                alert('Please enter a valid quantity greater than 0');
                 return;
             }
 
@@ -221,9 +235,10 @@
                     await loadMovements();
                     await loadProductsForDropdowns();
                     stockInForm.reset();
-                    alert('Stock In recorded successfully!');
+                    alert(`✅ Stock In recorded! Added ${qty} units of ${productName}`);
                 } else {
-                    alert('Failed to record stock in');
+                    const error = await response.json();
+                    alert('Failed to record stock in: ' + error.error);
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -231,25 +246,36 @@
             }
         });
 
-        // Handle Stock Out form
+        // Handle Stock Out form with quantity validation
         const stockOutForm = document.querySelector('.grid-2 .box-section:last-child form');
         stockOutForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const productSelect = stockOutForm.querySelector('select');
             const productId = productSelect.value;
-            const productName = productSelect.options[productSelect.selectedIndex]?.text;
+            const productName = productSelect.options[productSelect.selectedIndex]?.text.split(' (Stock:')[0];
+            const currentStock = parseInt(productSelect.options[productSelect.selectedIndex]?.dataset.quantity || 0);
             const qty = parseInt(stockOutForm.querySelector('input[type="number"]').value);
-            const reasonSelect = stockOutForm.querySelectorAll('select')[1];
-            const reason = reasonSelect.options[reasonSelect.selectedIndex]?.text;
+            const reasonSelect = document.getElementById('stockOutReason');
+            const reason = reasonSelect?.value;
 
-            if (!productId || !qty || qty <= 0) {
-                alert('Please select a product and enter a valid quantity');
+            // Validation
+            if (!productId) {
+                alert('Please select a product');
+                return;
+            }
+            if (!qty || qty <= 0) {
+                alert('Please enter a valid quantity greater than 0');
+                return;
+            }
+            if (!reason || reason === '') {
+                alert('Please select a reason for stock out');
                 return;
             }
 
-            if (!reason || reason === '-- Choose Reason --') {
-                alert('Please select a reason');
+            // Check if enough stock is available
+            if (qty > currentStock) {
+                alert(`❌ Insufficient stock!\n\nAvailable: ${currentStock} units\nRequested: ${qty} units\n\nPlease reduce the quantity or add more stock first.`);
                 return;
             }
 
@@ -270,9 +296,11 @@
                     await loadMovements();
                     await loadProductsForDropdowns();
                     stockOutForm.reset();
-                    alert('Stock Out recorded successfully!');
+                    if (reasonSelect) reasonSelect.value = '';
+                    alert(`✅ Stock Out recorded! Removed ${qty} units of ${productName}\nRemaining stock: ${currentStock - qty}`);
                 } else {
-                    alert('Failed to record stock out. Insufficient stock?');
+                    const error = await response.json();
+                    alert('Failed to record stock out: ' + error.error);
                 }
             } catch (error) {
                 console.error('Error:', error);

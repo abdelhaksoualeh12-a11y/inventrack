@@ -22,19 +22,19 @@ app.get('/', (req, res) => {
 // ============ AUTHENTICATION ============
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
-    
+
     try {
         const user = await db.get("SELECT * FROM users WHERE email = $1", [email]);
-        
+
         if (!user) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
-        
+
         const validPassword = bcrypt.compareSync(password, user.password);
         if (!validPassword) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
-        
+
         const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, SECRET_KEY);
         res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
     } catch (error) {
@@ -47,7 +47,7 @@ app.post('/api/login', async (req, res) => {
 app.post('/api/reset-admin', async (req, res) => {
     try {
         const newHashedPassword = bcrypt.hashSync('admin123', 10);
-        
+
         // Update or insert admin user
         await db.run(
             `INSERT INTO users (name, email, password, role, status) 
@@ -56,13 +56,13 @@ app.post('/api/reset-admin', async (req, res) => {
              password = $3, role = $4, status = $5`,
             ['Admin User', 'admin@inventrack.com', newHashedPassword, 'Administrator', 'Active']
         );
-        
+
         // Verify it worked
         const user = await db.get("SELECT * FROM users WHERE email = $1", ['admin@inventrack.com']);
         const testValid = bcrypt.compareSync('admin123', user.password);
-        
-        res.json({ 
-            message: 'Admin reset complete', 
+
+        res.json({
+            message: 'Admin reset complete',
             passwordValid: testValid,
             user: { id: user.id, email: user.email, role: user.role }
         });
@@ -76,8 +76,8 @@ app.post('/api/reset-admin', async (req, res) => {
 app.get('/api/debug', async (req, res) => {
     try {
         const test = await db.get("SELECT 1 as connected", []);
-        res.json({ 
-            status: 'Database connected', 
+        res.json({
+            status: 'Database connected',
             test: test,
             dbType: 'PostgreSQL'
         });
@@ -109,7 +109,7 @@ app.get('/api/products', async (req, res) => {
 app.post('/api/products', async (req, res) => {
     const { name, sku, category, quantity, price, alert_qty } = req.body;
     const status = quantity === 0 ? 'Out of Stock' : quantity <= alert_qty ? 'Low Stock' : 'In Stock';
-    
+
     try {
         const result = await db.run(
             `INSERT INTO products (name, sku, category, quantity, price, status, alert_qty) 
@@ -126,7 +126,7 @@ app.post('/api/products', async (req, res) => {
 app.put('/api/products/:id', async (req, res) => {
     const { name, sku, category, quantity, price, alert_qty } = req.body;
     const status = quantity === 0 ? 'Out of Stock' : quantity <= alert_qty ? 'Low Stock' : 'In Stock';
-    
+
     try {
         await db.run(
             `UPDATE products SET name=$1, sku=$2, category=$3, quantity=$4, price=$5, status=$6, alert_qty=$7 WHERE id=$8`,
@@ -162,7 +162,7 @@ app.get('/api/categories', async (req, res) => {
 
 app.post('/api/categories', async (req, res) => {
     const { name, description, total_products } = req.body;
-    
+
     try {
         const result = await db.run(
             `INSERT INTO categories (name, description, total_products) VALUES ($1, $2, $3)`,
@@ -177,7 +177,7 @@ app.post('/api/categories', async (req, res) => {
 
 app.put('/api/categories/:id', async (req, res) => {
     const { name, description, total_products } = req.body;
-    
+
     try {
         await db.run(
             `UPDATE categories SET name=$1, description=$2, total_products=$3 WHERE id=$4`,
@@ -213,7 +213,7 @@ app.get('/api/suppliers', async (req, res) => {
 
 app.post('/api/suppliers', async (req, res) => {
     const { name, contact_person, email, phone, status } = req.body;
-    
+
     try {
         const result = await db.run(
             `INSERT INTO suppliers (name, contact_person, email, phone, status) VALUES ($1, $2, $3, $4, $5)`,
@@ -228,7 +228,7 @@ app.post('/api/suppliers', async (req, res) => {
 
 app.put('/api/suppliers/:id', async (req, res) => {
     const { name, contact_person, email, phone, status } = req.body;
-    
+
     try {
         await db.run(
             `UPDATE suppliers SET name=$1, contact_person=$2, email=$3, phone=$4, status=$5 WHERE id=$6`,
@@ -264,20 +264,20 @@ app.get('/api/stock-movements', async (req, res) => {
 
 app.post('/api/stock-movements', async (req, res) => {
     const { product_id, product_name, type, quantity, details } = req.body;
-    
+
     try {
         const result = await db.run(
             `INSERT INTO stock_movements (product_id, product_name, type, quantity, details) VALUES ($1, $2, $3, $4, $5)`,
             [product_id, product_name, type, quantity, details]
         );
-        
+
         // Update product quantity
         if (type === 'IN') {
             await db.run(`UPDATE products SET quantity = quantity + $1 WHERE id = $2`, [quantity, product_id]);
         } else {
             await db.run(`UPDATE products SET quantity = quantity - $1 WHERE id = $2 AND quantity >= $1`, [quantity, product_id]);
         }
-        
+
         res.json({ id: result.lastID, message: 'Stock movement recorded' });
     } catch (error) {
         console.error('Stock movement error:', error);
@@ -292,7 +292,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
         const categoryStats = await db.get("SELECT COUNT(*) as total_categories FROM categories", []);
         const lowStockStats = await db.get("SELECT COUNT(*) as low_stock FROM products WHERE status = 'Low Stock'", []);
         const outOfStockStats = await db.get("SELECT COUNT(*) as out_of_stock FROM products WHERE status = 'Out of Stock'", []);
-        
+
         res.json({
             total_products: productStats?.total_products || 0,
             total_stock: productStats?.total_stock || 0,
@@ -307,35 +307,27 @@ app.get('/api/dashboard/stats', async (req, res) => {
 });
 
 // ============ USERS ============
-app.get('/api/users', async (req, res) => {
-    try {
-        const rows = await db.all("SELECT id, name, email, role, status, created_at FROM users", []);
-        res.json(rows);
-    } catch (error) {
-        console.error('Users error:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
 app.post('/api/users', async (req, res) => {
-    const { name, email, role, status } = req.body;
-    const defaultPassword = bcrypt.hashSync('password123', 10);
-    
+    const { name, email, role, status, password } = req.body;
+
+    // Use provided password or default
+    const plainPassword = password || 'password123';
+    const hashedPassword = bcrypt.hashSync(plainPassword, 10);
+
     try {
         const result = await db.run(
             `INSERT INTO users (name, email, password, role, status) VALUES ($1, $2, $3, $4, $5)`,
-            [name, email, defaultPassword, role, status || 'Active']
+            [name, email, hashedPassword, role, status || 'Active']
         );
-        res.json({ id: result.lastID });
+        res.json({ id: result.lastID, message: 'User created', temporaryPassword: !password ? 'password123' : null });
     } catch (error) {
         console.error('Create user error:', error);
         res.status(500).json({ error: error.message });
     }
 });
-
 app.put('/api/users/:id', async (req, res) => {
     const { name, email, role, status } = req.body;
-    
+
     try {
         await db.run(
             `UPDATE users SET name=$1, email=$2, role=$3, status=$4 WHERE id=$5`,
@@ -373,8 +365,8 @@ app.get('/api/inventory-value', async (req, res) => {
 app.get('/api/most-sold-products', async (req, res) => {
     const range = req.query.range || 'month';
     let dateCondition = '';
-    
-    switch(range) {
+
+    switch (range) {
         case 'week':
             dateCondition = "date >= CURRENT_DATE - INTERVAL '7 days'";
             break;
@@ -387,7 +379,7 @@ app.get('/api/most-sold-products', async (req, res) => {
         default:
             dateCondition = "date >= CURRENT_DATE - INTERVAL '30 days'";
     }
-    
+
     try {
         const rows = await db.all(`
             SELECT product_name, SUM(quantity) as total_sold 
@@ -403,5 +395,79 @@ app.get('/api/most-sold-products', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+// ============ CHANGE OWN PASSWORD ============
+app.post('/api/change-password', async (req, res) => {
+    const { userId, currentPassword, newPassword } = req.body;
 
+    // Get token from header
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+        return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    try {
+        // Verify token
+        const decoded = jwt.verify(token, SECRET_KEY);
+
+        // Ensure user is changing their own password
+        if (decoded.id !== userId) {
+            return res.status(403).json({ error: 'You can only change your own password' });
+        }
+
+        // Get current user
+        const user = await db.get("SELECT * FROM users WHERE id = $1", [userId]);
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Verify current password
+        const validPassword = bcrypt.compareSync(currentPassword, user.password);
+        if (!validPassword) {
+            return res.status(401).json({ error: 'Current password is incorrect' });
+        }
+
+        // Hash and save new password
+        const hashedPassword = bcrypt.hashSync(newPassword, 10);
+        await db.run(
+            "UPDATE users SET password = $1 WHERE id = $2",
+            [hashedPassword, userId]
+        );
+
+        res.json({ message: 'Password changed successfully' });
+    } catch (error) {
+        console.error('Change password error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+// ============ ADMIN RESET USER PASSWORD ============
+app.post('/api/admin/reset-password', async (req, res) => {
+    const { userId, newPassword } = req.body;
+    
+    // Verify admin token
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+        return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    try {
+        const decoded = jwt.verify(token, SECRET_KEY);
+        
+        // Check if user is admin
+        if (decoded.role !== 'Administrator') {
+            return res.status(403).json({ error: 'Only administrators can reset passwords' });
+        }
+        
+        const hashedPassword = bcrypt.hashSync(newPassword, 10);
+        await db.run(
+            "UPDATE users SET password = $1 WHERE id = $2",
+            [hashedPassword, userId]
+        );f
+        
+        res.json({ message: 'Password reset successfully' });
+    } catch (error) {
+        console.error('Admin reset error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 app.listen(PORT, () => console.log(`Server on port ${PORT}`));

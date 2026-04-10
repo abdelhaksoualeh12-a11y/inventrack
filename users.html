@@ -132,6 +132,7 @@
         <a href="reports.html"><i class="fas fa-file-invoice"></i> Reports</a>
         <a href="users.html" class="active"><i class="fas fa-users-cog"></i> Users & Roles</a>
         <a href="settings.html"><i class="fas fa-cog"></i> Settings</a>
+        <a href="change-password.html"><i class="fas fa-key"></i> Change Password</a>
         <a href="index.html" style="margin-top: auto; border-top: 1px solid #1e293b; color: #ef4444;"><i
                 class="fas fa-sign-out-alt"></i> Logout</a>
     </aside>
@@ -161,35 +162,6 @@
                         </tr>
                     </thead>
                     <tbody id="userTableBody">
-                        <tr>
-                            <td style="font-weight: 600; color: #0f172a;">Admin User</td>
-                            <td>admin@company.com</td>
-                            <td><span class="badge" style="background:#e0e7ff; color:#4f46e5;">Administrator</span></td>
-                            <td><span class="badge badge-success">Active</span></td>
-                            <td class="table-actions" style="text-align: right;">
-                                <button title="Edit"><i class="fas fa-edit"></i></button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight: 600; color: #0f172a;">Sarah Manager</td>
-                            <td>sarah@company.com</td>
-                            <td><span class="badge" style="background:#fef3c7; color:#d97706;">Manager</span></td>
-                            <td><span class="badge badge-success">Active</span></td>
-                            <td class="table-actions" style="text-align: right;">
-                                <button title="Edit"><i class="fas fa-edit"></i></button>
-                                <button title="Delete" class="del"><i class="fas fa-trash-alt"></i></button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="font-weight: 600; color: #0f172a;">John Staff</td>
-                            <td>john@company.com</td>
-                            <td><span class="badge" style="background:#f1f5f9; color:#475569;">Staff</span></td>
-                            <td><span class="badge badge-error">Inactive</span></td>
-                            <td class="table-actions" style="text-align: right;">
-                                <button title="Edit"><i class="fas fa-edit"></i></button>
-                                <button title="Delete" class="del"><i class="fas fa-trash-alt"></i></button>
-                            </td>
-                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -226,6 +198,11 @@
                             <option value="Inactive">Inactive</option>
                         </select>
                     </div>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="userPassword" placeholder="Leave empty for default (password123)">
+                    <small style="color: #64748b;">Leave blank to use default password (password123)</small>
                 </div>
 
                 <label
@@ -304,6 +281,7 @@
         }
 
         // Add/Update user
+        // Add/Update user
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -311,7 +289,8 @@
                 name: document.getElementById('userName').value,
                 email: document.getElementById('userEmail').value,
                 role: document.getElementById('userRole').value,
-                status: document.getElementById('userStatus').value
+                status: document.getElementById('userStatus').value,
+                password: document.getElementById('userPassword')?.value || null
             };
 
             try {
@@ -331,22 +310,23 @@
                 }
 
                 if (response.ok) {
+                    const data = await response.json();
+                    if (data.temporaryPassword) {
+                        alert(`User created! Temporary password: ${data.temporaryPassword}\nPlease ask them to change it on first login.`);
+                    }
                     await loadUsers();
                     modal.classList.remove('active');
                     form.reset();
                     editingId = null;
+                } else {
+                    const error = await response.json();
+                    alert('Failed to save user: ' + error.error);
                 }
             } catch (error) {
                 console.error('Error saving user:', error);
+                alert('Failed to save user');
             }
         });
-
-        window.deleteUser = async (id) => {
-            if (confirm('Delete this user?')) {
-                await fetch(`${API_URL}/users/${id}`, { method: 'DELETE' });
-                await loadUsers();
-            }
-        };
 
         window.editUser = (user) => {
             editingId = user.id;
