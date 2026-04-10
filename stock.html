@@ -32,45 +32,48 @@
         <div class="grid-2">
             <!-- Stock In Box -->
             <section class="box-section">
-                <h3 style="color: #10b981; border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem;"><i
-                        class="fas fa-arrow-down" style="margin-right: 0.5rem;"></i> Stock In</h3>
+                <h3 style="color: #10b981; border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem;">
+                    <i class="fas fa-arrow-down" style="margin-right: 0.5rem;"></i> Stock In
+                </h3>
 
-                <form>
+                <form id="stockInForm">
                     <div class="form-group">
                         <label>Select Product</label>
-                        <select required>
+                        <select id="stockInProduct" required>
                             <option value="">-- Choose Product --</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label>Quantity</label>
-                        <input type="number" required min="1" placeholder="0">
+                        <input type="number" id="stockInQuantity" required min="1" placeholder="0">
                     </div>
                     <div class="form-group">
                         <label>Supplier <span style="font-weight: normal; color: #94a3b8;">(Optional)</span></label>
-                        <input type="text" placeholder="e.g. Dell Distributor LLC">
+                        <input type="text" id="stockInSupplier" placeholder="e.g. Dell Distributor LLC">
                     </div>
                     <button type="submit" class="btn-primary"
-                        style="background-color: #10b981; border: none; width: 100%; margin-top: 1.5rem; padding: 1rem; font-size: 1.1rem;">Record
-                        Stock In</button>
+                        style="background-color: #10b981; border: none; width: 100%; margin-top: 1.5rem; padding: 1rem; font-size: 1.1rem;">
+                        Record Stock In
+                    </button>
                 </form>
             </section>
 
             <!-- Stock Out Box -->
             <section class="box-section">
-                <h3 style="color: #ef4444; border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem;"><i
-                        class="fas fa-arrow-up" style="margin-right: 0.5rem;"></i> Stock Out</h3>
+                <h3 style="color: #ef4444; border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem;">
+                    <i class="fas fa-arrow-up" style="margin-right: 0.5rem;"></i> Stock Out
+                </h3>
 
-                <form>
+                <form id="stockOutForm">
                     <div class="form-group">
                         <label>Select Product</label>
-                        <select required>
+                        <select id="stockOutProduct" required>
                             <option value="">-- Choose Product --</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label>Quantity</label>
-                        <input type="number" required min="1" placeholder="0">
+                        <input type="number" id="stockOutQuantity" required min="1" placeholder="0">
                     </div>
                     <div class="form-group">
                         <label>Reason</label>
@@ -84,8 +87,9 @@
                         </select>
                     </div>
                     <button type="submit" class="btn-primary"
-                        style="background-color: #ef4444; border: none; width: 100%; margin-top: 1.5rem; padding: 1rem; font-size: 1.1rem;">Record
-                        Stock Out</button>
+                        style="background-color: #ef4444; border: none; width: 100%; margin-top: 1.5rem; padding: 1rem; font-size: 1.1rem;">
+                        Record Stock Out
+                    </button>
                 </form>
             </section>
         </div>
@@ -111,7 +115,6 @@
                         </tr>
                     </thead>
                     <tbody id="historyTableBody">
-                        <!-- History rows will go here -->
                         <tr>
                             <td colspan="5" style="text-align: center; color: #94a3b8; padding: 2rem 0;">No recent
                                 movements recorded today.</td>
@@ -155,12 +158,12 @@
                         : '<span style="color: #ef4444; font-weight: 600;"><i class="fas fa-arrow-up" style="margin-right: 4px;"></i> OUT</span>';
 
                     tr.innerHTML = `
-                    <td style="color: #64748b;">${m.date}</td>
-                    <td style="font-weight: 600; color: #0f172a;">${escapeHtml(m.product_name)}</td>
-                    <td>${typeHtml}</td>
-                    <td>${m.quantity}</td>
-                    <td style="color: #64748b;">${escapeHtml(m.details || 'N/A')}</td>
-                `;
+                        <td style="color: #64748b;">${m.date}</td>
+                        <td style="font-weight: 600; color: #0f172a;">${escapeHtml(m.product_name)}</td>
+                        <td>${typeHtml}</td>
+                        <td>${m.quantity}</td>
+                        <td style="color: #64748b;">${escapeHtml(m.details || 'N/A')}</td>
+                    `;
                     historyBody.appendChild(tr);
                 });
             } catch (error) {
@@ -174,132 +177,144 @@
                 const response = await fetch(`${API_URL}/products`);
                 const products = await response.json();
 
-                const selects = document.querySelectorAll('form select');
-                selects.forEach(select => {
-                    if (select.closest('.box-section')) {
-                        const currentValue = select.value;
-                        select.innerHTML = '<option value="">-- Choose Product --</option>';
-                        products.forEach(p => {
-                            const option = document.createElement('option');
-                            option.value = p.id;
-                            option.textContent = `${p.name} (Stock: ${p.quantity})`;
-                            option.dataset.quantity = p.quantity;
-                            select.appendChild(option);
-                        });
-                        if (currentValue) select.value = currentValue;
-                    }
-                });
+                // Update Stock In product dropdown
+                const stockInSelect = document.getElementById('stockInProduct');
+                if (stockInSelect) {
+                    stockInSelect.innerHTML = '<option value="">-- Choose Product --</option>';
+                    products.forEach(p => {
+                        const option = document.createElement('option');
+                        option.value = p.id;
+                        option.textContent = `${p.name} (Stock: ${p.quantity})`;
+                        option.dataset.quantity = p.quantity;
+                        stockInSelect.appendChild(option);
+                    });
+                }
+
+                // Update Stock Out product dropdown
+                const stockOutSelect = document.getElementById('stockOutProduct');
+                if (stockOutSelect) {
+                    stockOutSelect.innerHTML = '<option value="">-- Choose Product --</option>';
+                    products.forEach(p => {
+                        const option = document.createElement('option');
+                        option.value = p.id;
+                        option.textContent = `${p.name} (Stock: ${p.quantity})`;
+                        option.dataset.quantity = p.quantity;
+                        stockOutSelect.appendChild(option);
+                    });
+                }
             } catch (error) {
                 console.error('Error loading products:', error);
             }
         }
 
         // Handle Stock In form
-        const stockInForm = document.querySelector('.grid-2 .box-section:first-child form');
-        stockInForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        const stockInForm = document.getElementById('stockInForm');
+        if (stockInForm) {
+            stockInForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
 
-            const productSelect = stockInForm.querySelector('select');
-            const productId = productSelect.value;
-            const productName = productSelect.options[productSelect.selectedIndex]?.text.split(' (Stock:')[0];
-            const qty = parseInt(stockInForm.querySelector('input[type="number"]').value);
-            const supplier = stockInForm.querySelector('input[type="text"]').value;
+                const productSelect = document.getElementById('stockInProduct');
+                const productId = productSelect.value;
+                const productName = productSelect.options[productSelect.selectedIndex]?.text.split(' (Stock:')[0];
+                const qty = parseInt(document.getElementById('stockInQuantity').value);
+                const supplier = document.getElementById('stockInSupplier').value;
 
-            if (!productId) {
-                alert('Please select a product');
-                return;
-            }
-            if (!qty || qty <= 0) {
-                alert('Please enter a valid quantity greater than 0');
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_URL}/stock-movements`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        product_id: parseInt(productId),
-                        product_name: productName,
-                        type: 'IN',
-                        quantity: qty,
-                        details: supplier ? `Supplier: ${supplier}` : 'Stock In'
-                    })
-                });
-
-                if (response.ok) {
-                    await loadMovements();
-                    await loadProductsForDropdowns();
-                    stockInForm.reset();
-                    alert(`✅ Stock In recorded! Added ${qty} units of ${productName}`);
-                } else {
-                    const error = await response.json();
-                    alert('Failed to record stock in: ' + error.error);
+                if (!productId) {
+                    alert('Please select a product');
+                    return;
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error recording stock in');
-            }
-        });
+                if (!qty || qty <= 0) {
+                    alert('Please enter a valid quantity greater than 0');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${API_URL}/stock-movements`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            product_id: parseInt(productId),
+                            product_name: productName,
+                            type: 'IN',
+                            quantity: qty,
+                            details: supplier ? `Supplier: ${supplier}` : 'Stock In'
+                        })
+                    });
+
+                    if (response.ok) {
+                        await loadMovements();
+                        await loadProductsForDropdowns();
+                        stockInForm.reset();
+                        alert(`✅ Stock In recorded! Added ${qty} units of ${productName}`);
+                    } else {
+                        const error = await response.json();
+                        alert('Failed to record stock in: ' + error.error);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error recording stock in');
+                }
+            });
+        }
 
         // Handle Stock Out form with quantity validation
-        const stockOutForm = document.querySelector('.grid-2 .box-section:last-child form');
-        stockOutForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        const stockOutForm = document.getElementById('stockOutForm');
+        if (stockOutForm) {
+            stockOutForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
 
-            const productSelect = stockOutForm.querySelector('select');
-            const productId = productSelect.value;
-            const productName = productSelect.options[productSelect.selectedIndex]?.text.split(' (Stock:')[0];
-            const currentStock = parseInt(productSelect.options[productSelect.selectedIndex]?.dataset.quantity || 0);
-            const qty = parseInt(stockOutForm.querySelector('input[type="number"]').value);
-            const reasonSelect = document.getElementById('stockOutReason');
-            const reason = reasonSelect?.value;
+                const productSelect = document.getElementById('stockOutProduct');
+                const productId = productSelect.value;
+                const productName = productSelect.options[productSelect.selectedIndex]?.text.split(' (Stock:')[0];
+                const currentStock = parseInt(productSelect.options[productSelect.selectedIndex]?.dataset.quantity || 0);
+                const qty = parseInt(document.getElementById('stockOutQuantity').value);
+                const reason = document.getElementById('stockOutReason').value;
 
-            if (!productId) {
-                alert('Please select a product');
-                return;
-            }
-            if (!qty || qty <= 0) {
-                alert('Please enter a valid quantity greater than 0');
-                return;
-            }
-            if (!reason || reason === '') {
-                alert('Please select a reason for stock out');
-                return;
-            }
-            if (qty > currentStock) {
-                alert(`❌ Insufficient stock!\n\nAvailable: ${currentStock} units\nRequested: ${qty} units\n\nPlease reduce the quantity or add more stock first.`);
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_URL}/stock-movements`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        product_id: parseInt(productId),
-                        product_name: productName,
-                        type: 'OUT',
-                        quantity: qty,
-                        details: `Reason: ${reason}`
-                    })
-                });
-
-                if (response.ok) {
-                    await loadMovements();
-                    await loadProductsForDropdowns();
-                    stockOutForm.reset();
-                    if (reasonSelect) reasonSelect.value = '';
-                    alert(`✅ Stock Out recorded! Removed ${qty} units of ${productName}\nRemaining stock: ${currentStock - qty}`);
-                } else {
-                    const error = await response.json();
-                    alert('Failed to record stock out: ' + error.error);
+                if (!productId) {
+                    alert('Please select a product');
+                    return;
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error recording stock out');
-            }
-        });
+                if (!qty || qty <= 0) {
+                    alert('Please enter a valid quantity greater than 0');
+                    return;
+                }
+                if (!reason || reason === '') {
+                    alert('Please select a reason for stock out');
+                    return;
+                }
+                if (qty > currentStock) {
+                    alert(`❌ Insufficient stock!\n\nAvailable: ${currentStock} units\nRequested: ${qty} units\n\nPlease reduce the quantity or add more stock first.`);
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${API_URL}/stock-movements`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            product_id: parseInt(productId),
+                            product_name: productName,
+                            type: 'OUT',
+                            quantity: qty,
+                            details: `Reason: ${reason}`
+                        })
+                    });
+
+                    if (response.ok) {
+                        await loadMovements();
+                        await loadProductsForDropdowns();
+                        stockOutForm.reset();
+                        alert(`✅ Stock Out recorded! Removed ${qty} units of ${productName}\nRemaining stock: ${currentStock - qty}`);
+                    } else {
+                        const error = await response.json();
+                        alert('Failed to record stock out: ' + error.error);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error recording stock out');
+                }
+            });
+        }
 
         // Clear history - ACTUALLY DELETE FROM DATABASE
         document.getElementById('clearHistoryBtn').addEventListener('click', async () => {

@@ -43,10 +43,10 @@ app.post('/api/login', async (req, res) => {
     try {
         const user = await db.get("SELECT * FROM users WHERE email = $1", [email]);
         if (!user) return res.status(401).json({ error: 'Invalid credentials' });
-        
+
         const validPassword = bcrypt.compareSync(password, user.password);
         if (!validPassword) return res.status(401).json({ error: 'Invalid credentials' });
-        
+
         const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, SECRET_KEY);
         res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
     } catch (error) {
@@ -81,13 +81,13 @@ app.post('/api/change-password', async (req, res) => {
     try {
         const decoded = jwt.verify(token, SECRET_KEY);
         if (decoded.id !== userId) return res.status(403).json({ error: 'You can only change your own password' });
-        
+
         const user = await db.get("SELECT * FROM users WHERE id = $1", [userId]);
         if (!user) return res.status(404).json({ error: 'User not found' });
-        
+
         const validPassword = bcrypt.compareSync(currentPassword, user.password);
         if (!validPassword) return res.status(401).json({ error: 'Current password is incorrect' });
-        
+
         const hashedPassword = bcrypt.hashSync(newPassword, 10);
         await db.run("UPDATE users SET password = $1 WHERE id = $2", [hashedPassword, userId]);
         res.json({ message: 'Password changed successfully' });
@@ -105,7 +105,7 @@ app.post('/api/admin/reset-password', async (req, res) => {
     try {
         const decoded = jwt.verify(token, SECRET_KEY);
         if (decoded.role !== 'Administrator') return res.status(403).json({ error: 'Only administrators can reset passwords' });
-        
+
         const hashedPassword = bcrypt.hashSync(newPassword, 10);
         await db.run("UPDATE users SET password = $1 WHERE id = $2", [hashedPassword, userId]);
         res.json({ message: 'Password reset successfully' });
@@ -285,8 +285,8 @@ app.delete('/api/stock-movements/clear-all', async (req, res) => {
     try {
         // Delete all stock movement records
         const result = await db.run(`DELETE FROM stock_movements`, []);
-        
-        res.json({ 
+
+        res.json({
             message: 'All stock movement records have been deleted',
             deletedCount: result.rowCount || 0
         });
@@ -298,11 +298,11 @@ app.delete('/api/stock-movements/clear-all', async (req, res) => {
 // ============ DELETE STOCK MOVEMENTS FOR A SPECIFIC PRODUCT ============
 app.delete('/api/stock-movements/product/:productId', async (req, res) => {
     const productId = req.params.productId;
-    
+
     try {
         const result = await db.run(`DELETE FROM stock_movements WHERE product_id = $1`, [productId]);
-        
-        res.json({ 
+
+        res.json({
             message: `Stock movements for product ${productId} deleted`,
             deletedCount: result.rowCount || 0
         });
