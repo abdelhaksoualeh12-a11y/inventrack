@@ -237,11 +237,18 @@
         // Load users from backend
         async function loadUsers() {
             try {
-                // Note: You'll need to add a /api/users endpoint to your backend
                 const response = await fetch(`${API_URL}/users`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
                 const users = await response.json();
 
                 tableBody.innerHTML = '';
+                if (users.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No users found</td></tr>';
+                    return;
+                }
+
                 users.forEach(user => {
                     const tr = document.createElement('tr');
                     let roleBadge = '';
@@ -254,19 +261,20 @@
                         : '<span class="badge badge-error">Inactive</span>';
 
                     tr.innerHTML = `
-                    <td style="font-weight: 600; color: #0f172a;">${escapeHtml(user.name)}</td>
-                    <td>${escapeHtml(user.email)}</td>
-                    <td>${roleBadge}</td>
-                    <td>${statusBadge}</td>
-                    <td class="table-actions" style="text-align: right;">
-                        <button title="Edit" onclick='editUser(${JSON.stringify(user)})'><i class="fas fa-edit"></i></button>
-                        <button title="Delete" class="del" onclick="deleteUser(${user.id})"><i class="fas fa-trash-alt"></i></button>
-                    </td>
-                `;
+                <td style="font-weight: 600; color: #0f172a;">${escapeHtml(user.name)}</td>
+                <td>${escapeHtml(user.email)}</td>
+                <td>${roleBadge}</td>
+                <td>${statusBadge}</td>
+                <td class="table-actions" style="text-align: right;">
+                    <button title="Edit" onclick='editUser(${JSON.stringify(user)})'><i class="fas fa-edit"></i></button>
+                    <button title="Delete" class="del" onclick="deleteUser(${user.id})"><i class="fas fa-trash-alt"></i></button>
+                </td>
+            `;
                     tableBody.appendChild(tr);
                 });
             } catch (error) {
                 console.error('Error loading users:', error);
+                tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">Error loading users: ${error.message}</td></tr>`;
             }
         }
 
@@ -327,7 +335,26 @@
                 alert('Failed to save user');
             }
         });
-
+        window.deleteUser = async (id) => {
+            if (confirm('Are you sure you want to delete this user?')) {
+                try {
+                    const response = await fetch(`${API_URL}/users/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                    });
+                    if (response.ok) {
+                        alert('User deleted successfully');
+                        await loadUsers();
+                    } else {
+                        const error = await response.json();
+                        alert('Failed to delete user: ' + error.error);
+                    }
+                } catch (error) {
+                    console.error('Error deleting user:', error);
+                    alert('Failed to delete user');
+                }
+            }
+        };
         window.editUser = (user) => {
             editingId = user.id;
             document.getElementById('userName').value = user.name;

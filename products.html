@@ -365,19 +365,32 @@
                 // Update product form category dropdown
                 const categorySelect = document.getElementById('prodCategory');
                 if (categorySelect) {
-                    while (categorySelect.options.length > 1) categorySelect.remove(1);
-                    categories.forEach(cat => {
+                    // Clear ALL existing options
+                    categorySelect.innerHTML = '';
+
+                    if (categories.length === 0) {
                         const option = document.createElement('option');
-                        option.value = cat.name;
-                        option.textContent = cat.name;
+                        option.value = '';
+                        option.textContent = 'No categories found - please add one first';
+                        option.disabled = true;
                         categorySelect.appendChild(option);
-                    });
+                    } else {
+                        categories.forEach(cat => {
+                            const option = document.createElement('option');
+                            option.value = cat.name;
+                            option.textContent = cat.name;
+                            categorySelect.appendChild(option);
+                        });
+                    }
                 }
 
                 // Update filter category dropdown
                 const filterSelect = document.querySelector('.toolbar-group select:first-of-type');
                 if (filterSelect) {
-                    while (filterSelect.options.length > 1) filterSelect.remove(1);
+                    // Clear ALL existing options except first
+                    while (filterSelect.options.length > 1) {
+                        filterSelect.remove(1);
+                    }
                     categories.forEach(cat => {
                         const option = document.createElement('option');
                         option.value = cat.name;
@@ -389,7 +402,6 @@
                 console.error('Error loading categories:', error);
             }
         }
-
         // Load products from backend
         async function loadProducts() {
             try {
