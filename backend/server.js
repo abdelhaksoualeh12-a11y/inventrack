@@ -281,7 +281,36 @@ app.post('/api/stock-movements', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-
+app.delete('/api/stock-movements/clear-all', async (req, res) => {
+    try {
+        // Delete all stock movement records
+        const result = await db.run(`DELETE FROM stock_movements`, []);
+        
+        res.json({ 
+            message: 'All stock movement records have been deleted',
+            deletedCount: result.rowCount || 0
+        });
+    } catch (error) {
+        console.error('Clear stock movements error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+// ============ DELETE STOCK MOVEMENTS FOR A SPECIFIC PRODUCT ============
+app.delete('/api/stock-movements/product/:productId', async (req, res) => {
+    const productId = req.params.productId;
+    
+    try {
+        const result = await db.run(`DELETE FROM stock_movements WHERE product_id = $1`, [productId]);
+        
+        res.json({ 
+            message: `Stock movements for product ${productId} deleted`,
+            deletedCount: result.rowCount || 0
+        });
+    } catch (error) {
+        console.error('Delete product movements error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 // ============ DASHBOARD ============
 app.get('/api/dashboard/stats', async (req, res) => {
     try {

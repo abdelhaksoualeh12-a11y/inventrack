@@ -74,17 +74,14 @@
                     </div>
                     <div class="form-group">
                         <label>Reason</label>
-                        <div class="form-group">
-                            <label>Reason</label>
-                            <select id="stockOutReason" required>
-                                <option value="">-- Choose Reason --</option>
-                                <option value="Sale">Sale</option>
-                                <option value="Internal Usage">Internal Usage</option>
-                                <option value="Damage / Loss">Damage / Loss</option>
-                                <option value="Transfer">Transfer to Other Location</option>
-                                <option value="Expired">Expired Products</option>
-                            </select>
-                        </div>
+                        <select id="stockOutReason" required>
+                            <option value="">-- Choose Reason --</option>
+                            <option value="Sale">Sale</option>
+                            <option value="Internal Usage">Internal Usage</option>
+                            <option value="Damage / Loss">Damage / Loss</option>
+                            <option value="Transfer">Transfer to Other Location</option>
+                            <option value="Expired">Expired Products</option>
+                        </select>
                     </div>
                     <button type="submit" class="btn-primary"
                         style="background-color: #ef4444; border: none; width: 100%; margin-top: 1.5rem; padding: 1rem; font-size: 1.1rem;">Record
@@ -208,7 +205,6 @@
             const qty = parseInt(stockInForm.querySelector('input[type="number"]').value);
             const supplier = stockInForm.querySelector('input[type="text"]').value;
 
-            // Validation
             if (!productId) {
                 alert('Please select a product');
                 return;
@@ -259,7 +255,6 @@
             const reasonSelect = document.getElementById('stockOutReason');
             const reason = reasonSelect?.value;
 
-            // Validation
             if (!productId) {
                 alert('Please select a product');
                 return;
@@ -272,8 +267,6 @@
                 alert('Please select a reason for stock out');
                 return;
             }
-
-            // Check if enough stock is available
             if (qty > currentStock) {
                 alert(`❌ Insufficient stock!\n\nAvailable: ${currentStock} units\nRequested: ${qty} units\n\nPlease reduce the quantity or add more stock first.`);
                 return;
@@ -308,10 +301,29 @@
             }
         });
 
-        // Clear history (just clears display, not database)
-        document.getElementById('clearHistoryBtn').addEventListener('click', () => {
-            if (confirm('Clear the movement history display? (Database records will remain)')) {
-                historyBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 2rem 0;">No recent movements recorded.</td></tr>`;
+        // Clear history - ACTUALLY DELETE FROM DATABASE
+        document.getElementById('clearHistoryBtn').addEventListener('click', async () => {
+            if (confirm('⚠️ WARNING: This will permanently delete ALL stock movement records from the database!\n\nThis action cannot be undone. Are you sure?')) {
+                try {
+                    const response = await fetch(`${API_URL}/stock-movements/clear-all`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        await loadMovements();
+                        alert('✅ All stock movement records have been permanently deleted.');
+                    } else {
+                        const error = await response.json();
+                        alert('Failed to clear records: ' + error.error);
+                    }
+                } catch (error) {
+                    console.error('Error clearing movements:', error);
+                    alert('Error clearing stock movement records');
+                }
             }
         });
 
