@@ -121,10 +121,6 @@
 
     <script>
         const API_URL = 'https://inventrack-backend-2wso.onrender.com/api';
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('stockInDate').value = today;
-        document.getElementById('stockOutDate').value = today;
-
         const historyBody = document.getElementById('historyTableBody');
 
         function escapeHtml(str) {
