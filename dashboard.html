@@ -157,7 +157,7 @@
             </section>
         </div>
     </main>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="settings-manager.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         const API_URL = 'https://inventrack-backend-2wso.onrender.com/api';
@@ -252,6 +252,11 @@
                 if (values[1]) values[1].innerText = stats.total_stock || 0;
                 if (values[3]) values[3].innerText = stats.low_stock || 0;
                 if (values[7]) values[7].innerText = stats.total_categories || 0;
+                if (values[2]) {
+                    const inventoryValue = stats.total_stock * 100; // Placeholder calculation
+                    values[2].innerText = formatPrice(inventoryValue);
+                    values[2].setAttribute('data-price', inventoryValue);
+                }
 
                 const outOfStockCard = document.querySelector('.card-stats[style*="border-top-color: #ef4444"] .value');
                 if (outOfStockCard) outOfStockCard.innerText = stats.out_of_stock || 0;
@@ -265,7 +270,10 @@
                 const response = await fetch(`${API_URL}/inventory-value`);
                 const data = await response.json();
                 const valueCard = document.querySelector('.card-stats[style*="border-top-color: #8b5cf6"] .value');
-                if (valueCard) valueCard.innerText = `$${data.total_value?.toLocaleString() || 0}`;
+                if (valueCard) {
+                    valueCard.innerText = formatPrice(data.total_value || 0);
+                    valueCard.setAttribute('data-price', data.total_value || 0);
+                }
             } catch (error) {
                 console.error('Error loading inventory value:', error);
             }
@@ -283,11 +291,12 @@
                     } else {
                         tbody.innerHTML = movements.slice(0, 5).map(m => `
                         <tr>
+                            <td data-date="${m.date}">${formatDateTime(m.date)}</td>
                             <td>${escapeHtml(m.product_name)}</td>
-                            <td style="color: ${m.type === 'IN' ? '#10b981' : '#ef4444'}; font-weight:600;">${m.type}</td>
-                            <td>${m.type === 'IN' ? '+' : '-'}${m.quantity}</td>
+                            <td style="color: ${m.type === 'IN' ? '#10b981' : '#ef4444'}; font-weight:600;">${m.type === 'IN' ? '+' : '-'}${m.quantity}</td>
                         </tr>
                     `).join('');
+                        applyGlobalSettings();
                     }
                 }
             } catch (error) {
@@ -352,49 +361,21 @@
             await loadMostSoldProducts(document.getElementById('chartTimeRange')?.value || 'month');
         }
 
-        // Listen for stock movements from stock page
-        window.addEventListener('stockMovementChanged', () => {
-            refreshDashboard();
-        });
+        window.addEventListener('stockMovementChanged', () => refreshDashboard());
+        window.addEventListener('settingsChanged', () => refreshDashboard());
 
-        // Chart time range change
         document.getElementById('chartTimeRange')?.addEventListener('change', (e) => {
             loadMostSoldProducts(e.target.value);
         });
 
-        // Auto-refresh every 10 seconds for real-time updates
         if (refreshInterval) clearInterval(refreshInterval);
         refreshInterval = setInterval(refreshDashboard, 10000);
 
-        // Refresh when page becomes visible
         document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                refreshDashboard();
-            }
+            if (!document.hidden) refreshDashboard();
         });
-        // Apply currency formatting to dashboard values
-        function applyCurrencyFormatting() {
-            const settings = JSON.parse(localStorage.getItem('appSettings') || '{}');
-            if (settings.currency) {
-                const valueCard = document.querySelector('.card-stats[style*="border-top-color: #8b5cf6"] .value');
-                if (valueCard && valueCard.innerText.startsWith('$')) {
-                    const amount = parseFloat(valueCard.innerText.replace(/[^0-9.-]/g, ''));
-                    if (!isNaN(amount)) {
-                        const currencyInfo = { USD: '$', EUR: '€', GBP: '£', DZD: 'دج' };
-                        const symbol = currencyInfo[settings.currency] || '$';
-                        valueCard.innerText = settings.currencyPosition === 'before'
-                            ? `${symbol}${amount.toFixed(settings.decimalPlaces || 2)}`
-                            : `${amount.toFixed(settings.decimalPlaces || 2)} ${symbol}`;
-                    }
-                }
-            }
-        }
-        window.addEventListener('settingsChanged', () => {
-            refreshDashboard();
-            applyCurrencyFormatting();
-        });
+
         refreshDashboard();
-         applyCurrencyFormatting();
     </script>
 
 </body>
