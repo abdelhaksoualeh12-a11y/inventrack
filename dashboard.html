@@ -159,223 +159,243 @@
     </main>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    const API_URL = 'https://inventrack-backend-2wso.onrender.com/api';
-    let salesChart = null;
-    let refreshInterval = null;
+    <script>
+        const API_URL = 'https://inventrack-backend-2wso.onrender.com/api';
+        let salesChart = null;
+        let refreshInterval = null;
 
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function (m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function (m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
 
-    async function loadMostSoldProducts(range = 'month') {
-        try {
-            const response = await fetch(`${API_URL}/most-sold-products?range=${range}`);
-            const data = await response.json();
+        async function loadMostSoldProducts(range = 'month') {
+            try {
+                const response = await fetch(`${API_URL}/most-sold-products?range=${range}`);
+                const data = await response.json();
 
-            const ctx = document.getElementById('salesChart').getContext('2d');
+                const ctx = document.getElementById('salesChart').getContext('2d');
 
-            if (salesChart) salesChart.destroy();
+                if (salesChart) salesChart.destroy();
 
-            if (data.length === 0) {
+                if (data.length === 0) {
+                    salesChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['No data yet'],
+                            datasets: [{
+                                label: 'Units Sold',
+                                data: [0],
+                                backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                                borderColor: '#3b82f6',
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { position: 'top' } }
+                        }
+                    });
+                    return;
+                }
+
                 salesChart = new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: ['No data yet'],
+                        labels: data.map(item => item.product_name),
                         datasets: [{
-                            label: 'Units Sold',
-                            data: [0],
+                            label: `Units Sold (${range === 'week' ? 'Last 7 Days' : range === 'month' ? 'Last 30 Days' : 'Last 12 Months'})`,
+                            data: data.map(item => item.total_sold),
                             backgroundColor: 'rgba(59, 130, 246, 0.7)',
                             borderColor: '#3b82f6',
-                            borderWidth: 2
+                            borderWidth: 2,
+                            borderRadius: 8
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { position: 'top' } }
-                    }
-                });
-                return;
-            }
-
-            salesChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: data.map(item => item.product_name),
-                    datasets: [{
-                        label: `Units Sold (${range === 'week' ? 'Last 7 Days' : range === 'month' ? 'Last 30 Days' : 'Last 12 Months'})`,
-                        data: data.map(item => item.total_sold),
-                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
-                        borderColor: '#3b82f6',
-                        borderWidth: 2,
-                        borderRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top' },
-                        tooltip: {
-                            callbacks: {
-                                label: function (context) {
-                                    return `Sold: ${context.raw} units`;
+                        plugins: {
+                            legend: { position: 'top' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return `Sold: ${context.raw} units`;
+                                    }
                                 }
                             }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, title: { display: true, text: 'Units Sold' } },
+                            x: { title: { display: true, text: 'Product Name' } }
                         }
-                    },
-                    scales: {
-                        y: { beginAtZero: true, title: { display: true, text: 'Units Sold' } },
-                        x: { title: { display: true, text: 'Product Name' } }
                     }
-                }
-            });
-        } catch (error) {
-            console.error('Error loading most sold products:', error);
+                });
+            } catch (error) {
+                console.error('Error loading most sold products:', error);
+            }
         }
-    }
 
-    async function loadDashboardStats() {
-        try {
-            const response = await fetch(`${API_URL}/dashboard/stats`);
-            const stats = await response.json();
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch(`${API_URL}/dashboard/stats`);
+                const stats = await response.json();
 
-            const values = document.querySelectorAll('.card-stats .value');
-            if (values[0]) values[0].innerText = stats.total_products || 0;
-            if (values[1]) values[1].innerText = stats.total_stock || 0;
-            if (values[3]) values[3].innerText = stats.low_stock || 0;
-            if (values[7]) values[7].innerText = stats.total_categories || 0;
+                const values = document.querySelectorAll('.card-stats .value');
+                if (values[0]) values[0].innerText = stats.total_products || 0;
+                if (values[1]) values[1].innerText = stats.total_stock || 0;
+                if (values[3]) values[3].innerText = stats.low_stock || 0;
+                if (values[7]) values[7].innerText = stats.total_categories || 0;
 
-            const outOfStockCard = document.querySelector('.card-stats[style*="border-top-color: #ef4444"] .value');
-            if (outOfStockCard) outOfStockCard.innerText = stats.out_of_stock || 0;
-        } catch (error) {
-            console.error('Error loading dashboard stats:', error);
+                const outOfStockCard = document.querySelector('.card-stats[style*="border-top-color: #ef4444"] .value');
+                if (outOfStockCard) outOfStockCard.innerText = stats.out_of_stock || 0;
+            } catch (error) {
+                console.error('Error loading dashboard stats:', error);
+            }
         }
-    }
 
-    async function loadInventoryValue() {
-        try {
-            const response = await fetch(`${API_URL}/inventory-value`);
-            const data = await response.json();
-            const valueCard = document.querySelector('.card-stats[style*="border-top-color: #8b5cf6"] .value');
-            if (valueCard) valueCard.innerText = `$${data.total_value?.toLocaleString() || 0}`;
-        } catch (error) {
-            console.error('Error loading inventory value:', error);
+        async function loadInventoryValue() {
+            try {
+                const response = await fetch(`${API_URL}/inventory-value`);
+                const data = await response.json();
+                const valueCard = document.querySelector('.card-stats[style*="border-top-color: #8b5cf6"] .value');
+                if (valueCard) valueCard.innerText = `$${data.total_value?.toLocaleString() || 0}`;
+            } catch (error) {
+                console.error('Error loading inventory value:', error);
+            }
         }
-    }
 
-    async function loadRecentMovements() {
-        try {
-            const response = await fetch(`${API_URL}/stock-movements`);
-            const movements = await response.json();
+        async function loadRecentMovements() {
+            try {
+                const response = await fetch(`${API_URL}/stock-movements`);
+                const movements = await response.json();
 
-            const tbody = document.querySelector('.grid-2 .box-section table tbody');
-            if (tbody) {
-                if (movements.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No recent movements</td></tr>';
-                } else {
-                    tbody.innerHTML = movements.slice(0, 5).map(m => `
+                const tbody = document.querySelector('.grid-2 .box-section table tbody');
+                if (tbody) {
+                    if (movements.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No recent movements</td></tr>';
+                    } else {
+                        tbody.innerHTML = movements.slice(0, 5).map(m => `
                         <tr>
                             <td>${escapeHtml(m.product_name)}</td>
                             <td style="color: ${m.type === 'IN' ? '#10b981' : '#ef4444'}; font-weight:600;">${m.type}</td>
                             <td>${m.type === 'IN' ? '+' : '-'}${m.quantity}</td>
                         </tr>
                     `).join('');
+                    }
                 }
+            } catch (error) {
+                console.error('Error loading movements:', error);
             }
-        } catch (error) {
-            console.error('Error loading movements:', error);
         }
-    }
 
-    async function loadLowStockAlerts() {
-        try {
-            const response = await fetch(`${API_URL}/products`);
-            const products = await response.json();
-            const lowStockProducts = products.filter(p => p.status === 'Low Stock');
+        async function loadLowStockAlerts() {
+            try {
+                const response = await fetch(`${API_URL}/products`);
+                const products = await response.json();
+                const lowStockProducts = products.filter(p => p.status === 'Low Stock');
 
-            const tbody = document.querySelector('.grid-2:last-child .box-section:first-child tbody');
-            if (tbody) {
-                if (lowStockProducts.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">No low stock items</td></tr>';
-                } else {
-                    tbody.innerHTML = lowStockProducts.map(p => `
+                const tbody = document.querySelector('.grid-2:last-child .box-section:first-child tbody');
+                if (tbody) {
+                    if (lowStockProducts.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">No low stock items</td></tr>';
+                    } else {
+                        tbody.innerHTML = lowStockProducts.map(p => `
                         <tr>
                             <td>${escapeHtml(p.name)}</td>
                             <td>${p.quantity} Left</td>
                         </tr>
                     `).join('');
+                    }
                 }
+            } catch (error) {
+                console.error('Error loading low stock alerts:', error);
             }
-        } catch (error) {
-            console.error('Error loading low stock alerts:', error);
         }
-    }
 
-    async function loadOutOfStockAlerts() {
-        try {
-            const response = await fetch(`${API_URL}/products`);
-            const products = await response.json();
-            const outOfStockProducts = products.filter(p => p.status === 'Out of Stock');
+        async function loadOutOfStockAlerts() {
+            try {
+                const response = await fetch(`${API_URL}/products`);
+                const products = await response.json();
+                const outOfStockProducts = products.filter(p => p.status === 'Out of Stock');
 
-            const tbody = document.querySelector('.grid-2:last-child .box-section:last-child tbody');
-            if (tbody) {
-                if (outOfStockProducts.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">No out of stock items</td></tr>';
-                } else {
-                    tbody.innerHTML = outOfStockProducts.map(p => `
+                const tbody = document.querySelector('.grid-2:last-child .box-section:last-child tbody');
+                if (tbody) {
+                    if (outOfStockProducts.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">No out of stock items</td></tr>';
+                    } else {
+                        tbody.innerHTML = outOfStockProducts.map(p => `
                         <tr>
                             <td>${escapeHtml(p.name)}</td>
                             <td>0 Left</td>
                         </tr>
                     `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading out of stock alerts:', error);
+            }
+        }
+
+        async function refreshDashboard() {
+            await loadDashboardStats();
+            await loadInventoryValue();
+            await loadRecentMovements();
+            await loadLowStockAlerts();
+            await loadOutOfStockAlerts();
+            await loadMostSoldProducts(document.getElementById('chartTimeRange')?.value || 'month');
+        }
+
+        // Listen for stock movements from stock page
+        window.addEventListener('stockMovementChanged', () => {
+            refreshDashboard();
+        });
+
+        // Chart time range change
+        document.getElementById('chartTimeRange')?.addEventListener('change', (e) => {
+            loadMostSoldProducts(e.target.value);
+        });
+
+        // Auto-refresh every 10 seconds for real-time updates
+        if (refreshInterval) clearInterval(refreshInterval);
+        refreshInterval = setInterval(refreshDashboard, 10000);
+
+        // Refresh when page becomes visible
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                refreshDashboard();
+            }
+        });
+        // Apply currency formatting to dashboard values
+        function applyCurrencyFormatting() {
+            const settings = JSON.parse(localStorage.getItem('appSettings') || '{}');
+            if (settings.currency) {
+                const valueCard = document.querySelector('.card-stats[style*="border-top-color: #8b5cf6"] .value');
+                if (valueCard && valueCard.innerText.startsWith('$')) {
+                    const amount = parseFloat(valueCard.innerText.replace(/[^0-9.-]/g, ''));
+                    if (!isNaN(amount)) {
+                        const currencyInfo = { USD: '$', EUR: '€', GBP: '£', DZD: 'دج' };
+                        const symbol = currencyInfo[settings.currency] || '$';
+                        valueCard.innerText = settings.currencyPosition === 'before'
+                            ? `${symbol}${amount.toFixed(settings.decimalPlaces || 2)}`
+                            : `${amount.toFixed(settings.decimalPlaces || 2)} ${symbol}`;
+                    }
                 }
             }
-        } catch (error) {
-            console.error('Error loading out of stock alerts:', error);
         }
-    }
-
-    async function refreshDashboard() {
-        await loadDashboardStats();
-        await loadInventoryValue();
-        await loadRecentMovements();
-        await loadLowStockAlerts();
-        await loadOutOfStockAlerts();
-        await loadMostSoldProducts(document.getElementById('chartTimeRange')?.value || 'month');
-    }
-
-    // Listen for stock movements from stock page
-    window.addEventListener('stockMovementChanged', () => {
-        refreshDashboard();
-    });
-
-    // Chart time range change
-    document.getElementById('chartTimeRange')?.addEventListener('change', (e) => {
-        loadMostSoldProducts(e.target.value);
-    });
-
-    // Auto-refresh every 10 seconds for real-time updates
-    if (refreshInterval) clearInterval(refreshInterval);
-    refreshInterval = setInterval(refreshDashboard, 10000);
-
-    // Refresh when page becomes visible
-    document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) {
+        window.addEventListener('settingsChanged', () => {
             refreshDashboard();
-        }
-    });
-
-    // Initial load
-    refreshDashboard();
-</script>
+            applyCurrencyFormatting();
+        });
+        refreshDashboard();
+         applyCurrencyFormatting();
+    </script>
 
 </body>
 

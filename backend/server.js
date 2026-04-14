@@ -264,6 +264,7 @@ app.get('/api/stock-movements', async (req, res) => {
     }
 });
 
+// ============ STOCK MOVEMENTS ============
 app.post('/api/stock-movements', async (req, res) => {
     const { product_id, product_name, type, quantity, details } = req.body;
     try {
@@ -271,13 +272,32 @@ app.post('/api/stock-movements', async (req, res) => {
             `INSERT INTO stock_movements (product_id, product_name, type, quantity, details) VALUES ($1, $2, $3, $4, $5)`,
             [product_id, product_name, type, quantity, details]
         );
+
+        // Get current product to check alert_qty
+        const product = await db.get("SELECT alert_qty, quantity FROM products WHERE id = $1", [product_id]);
+        let newQuantity = product.quantity;
+
         if (type === 'IN') {
-            await db.run(`UPDATE products SET quantity = quantity + $1 WHERE id = $2`, [quantity, product_id]);
+            newQuantity = product.quantity + quantity;
+            await db.run(`UPDATE products SET quantity = $1 WHERE id = $2`, [newQuantity, product_id]);
         } else {
-            await db.run(`UPDATE products SET quantity = quantity - $1 WHERE id = $2 AND quantity >= $1`, [quantity, product_id]);
+            newQuantity = product.quantity - quantity;
+            await db.run(`UPDATE products SET quantity = $1 WHERE id = $2 AND quantity >= $1`, [newQuantity, product_id]);
         }
-        res.json({ id: result.lastID, message: 'Stock movement recorded' });
+
+        // Update status based on new quantity
+        let newStatus = 'In Stock';
+        if (newQuantity === 0) {
+            newStatus = 'Out of Stock';
+        } else if (newQuantity <= product.alert_qty) {
+            newStatus = 'Low Stock';
+        }
+
+        await db.run(`UPDATE products SET status = $1 WHERE id = $2`, [newStatus, product_id]);
+
+        res.json({ id: result.lastID, message: 'Stock movement recorded', newQuantity, newStatus });
     } catch (error) {
+        console.error('Stock movement error:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -404,22 +424,22 @@ app.put('/api/users/:id', async (req, res) => {
 app.delete('/api/users/:id', async (req, res) => {
     const userId = req.params.id;
     const token = req.headers.authorization?.split(' ')[1];
-    
+
     if (!token) {
         return res.status(401).json({ error: 'Not authenticated' });
     }
-    
+
     try {
         const decoded = jwt.verify(token, SECRET_KEY);
         const currentUserRole = decoded.role;
-        
+
         // Get target user
         const targetUser = await db.get("SELECT role FROM users WHERE id = $1", [userId]);
-        
+
         if (!targetUser) {
             return res.status(404).json({ error: 'User not found' });
         }
-        
+
         // Admin can delete anyone except themselves
         if (currentUserRole === 'Administrator') {
             if (decoded.id === parseInt(userId)) {
@@ -428,7 +448,7 @@ app.delete('/api/users/:id', async (req, res) => {
             await db.run(`DELETE FROM users WHERE id = $1`, [userId]);
             return res.json({ message: 'User deleted successfully' });
         }
-        
+
         // Managers can only delete Staff users
         if (currentUserRole === 'Manager') {
             if (targetUser.role === 'Administrator') {
@@ -440,10 +460,10 @@ app.delete('/api/users/:id', async (req, res) => {
             await db.run(`DELETE FROM users WHERE id = $1 AND role = 'Staff'`, [userId]);
             return res.json({ message: 'Staff user deleted successfully' });
         }
-        
+
         // Staff cannot delete anyone
         return res.status(403).json({ error: 'You do not have permission to delete users' });
-        
+
     } catch (error) {
         console.error('Delete user error:', error);
         res.status(500).json({ error: error.message });

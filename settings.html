@@ -7,6 +7,20 @@
     <link rel="stylesheet" href="style.css">
     <script src="auth.js"></script>
     <script src="validation.js"></script>
+    <style>
+        .currency-display {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #f1f5f9;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+        .timezone-preview {
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+    </style>
 </head>
 <body>
     <aside class="sidebar">
@@ -26,69 +40,305 @@
     <main class="main-content">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
             <h1 class="page-header" style="margin-bottom: 0; border: none; padding: 0;">System Settings</h1>
-            <button class="btn-primary" onclick="alert('Settings Saved Successfully!')" style="width: auto;"><i class="fas fa-save"></i> Save Changes</button>
+            <button id="saveSettingsBtn" class="btn-primary" style="width: auto;"><i class="fas fa-save"></i> Save Changes</button>
         </div>
 
         <div class="grid-2">
             <!-- Company Profile -->
             <section class="box-section">
                 <h3><i class="fas fa-building" style="color: #64748b; margin-right:8px;"></i> Company Profile</h3>
-                <form>
+                <form id="companyForm">
                     <div class="form-group">
                         <label>Company/Store Name</label>
-                        <input type="text" value="InvenTrack Solutions">
+                        <input type="text" id="companyName" value="InvenTrack Solutions">
                     </div>
                     <div class="form-group">
                         <label>Support Email</label>
-                        <input type="email" value="contact@inventrack.com">
+                        <input type="email" id="supportEmail" value="contact@inventrack.com">
                     </div>
                     <div class="form-group">
                         <label>Company Address</label>
-                        <input type="text" value="123 Business Avenue, Tech District">
+                        <input type="text" id="companyAddress" value="123 Business Avenue, Tech District">
                     </div>
                     <div class="form-group">
                         <label>Tax ID / VAT Number</label>
-                        <input type="text" value="TRN-5544332211">
+                        <input type="text" id="taxId" value="TRN-5544332211">
                     </div>
                 </form>
             </section>
 
-            <!-- Preferences & Localization -->
+            <!-- Currency & Timezone Settings -->
             <div>
                 <section class="box-section">
-                    <h3><i class="fas fa-globe" style="color: #64748b; margin-right:8px;"></i> Localization</h3>
-                    <form>
-                        <div class="form-group">
-                            <label>Default Currency</label>
-                            <select>
-                                <option value="USD">USD ($)</option>
-                                <option value="EUR">EUR (€)</option>
-                                <option value="SAR">SAR (ريال)</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Timezone</label>
-                            <select>
-                                <option value="UTC">UTC (Universal Time)</option>
-                                <option value="EST">EST (Eastern Standard Time)</option>
-                                <option value="AST">AST (Arabia Standard Time)</option>
-                            </select>
-                        </div>
-                    </form>
+                    <h3><i class="fas fa-globe" style="color: #64748b; margin-right:8px;"></i> Currency Settings</h3>
+                    <div class="form-group">
+                        <label>Default Currency</label>
+                        <select id="currencySelect">
+                            <option value="USD">USD ($) - US Dollar</option>
+                            <option value="EUR">EUR (€) - Euro</option>
+                            <option value="GBP">GBP (£) - British Pound</option>
+                            <option value="DZD">DZD (دج) - Algerian Dinar</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Currency Position</label>
+                        <select id="currencyPosition">
+                            <option value="before">Before amount (e.g., $100)</option>
+                            <option value="after">After amount (e.g., 100 $)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Decimal Places</label>
+                        <select id="decimalPlaces">
+                            <option value="0">0 (e.g., 100)</option>
+                            <option value="2" selected>2 (e.g., 100.00)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Currency Symbol Preview</label>
+                        <div><span id="currencyPreview" class="currency-display">$100.00</span></div>
+                    </div>
                 </section>
 
                 <section class="box-section">
-                    <h3><i class="fas fa-sliders-h" style="color: #64748b; margin-right:8px;"></i> Inventory Settings</h3>
-                    <form>
-                        <div class="form-group">
-                            <label>Global Default Low Stock Alert</label>
-                            <input type="number" value="10">
-                            <small style="color: #94a3b8; margin-top: 0.25rem; display: block;">This value will be standard for new products unless overridden.</small>
-                        </div>
-                    </form>
+                    <h3><i class="fas fa-clock" style="color: #64748b; margin-right:8px;"></i> Timezone & Date Settings</h3>
+                    <div class="form-group">
+                        <label>Timezone</label>
+                        <select id="timezoneSelect">
+                            <option value="UTC">UTC (Coordinated Universal Time)</option>
+                            <option value="America/New_York">EST (Eastern Standard Time)</option>
+                            <option value="America/Chicago">CST (Central Standard Time)</option>
+                            <option value="America/Denver">MST (Mountain Standard Time)</option>
+                            <option value="America/Los_Angeles">PST (Pacific Standard Time)</option>
+                            <option value="Europe/London">GMT (Greenwich Mean Time)</option>
+                            <option value="Europe/Paris">CET (Central European Time)</option>
+                            <option value="Asia/Dubai">GST (Gulf Standard Time)</option>
+                            <option value="Asia/Kolkata">IST (Indian Standard Time)</option>
+                            <option value="Asia/Tokyo">JST (Japan Standard Time)</option>
+                            <option value="Australia/Sydney">AEST (Australian Eastern Time)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date Format</label>
+                        <select id="dateFormat">
+                            <option value="DD/MM/YYYY">DD/MM/YYYY (31/12/2024)</option>
+                            <option value="MM/DD/YYYY">MM/DD/YYYY (12/31/2024)</option>
+                            <option value="YYYY-MM-DD">YYYY-MM-DD (2024-12-31)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Time Format</label>
+                        <select id="timeFormat">
+                            <option value="24h">24-hour (14:30)</option>
+                            <option value="12h">12-hour (2:30 PM)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Current Time Preview</label>
+                        <div id="timePreview" class="timezone-preview">Loading...</div>
+                    </div>
                 </section>
             </div>
         </div>
     </main>
+
+    <script>
+        // Currency and timezone management
+        let currentSettings = {
+            currency: 'USD',
+            currencyPosition: 'before',
+            decimalPlaces: 2,
+            timezone: 'UTC',
+            dateFormat: 'DD/MM/YYYY',
+            timeFormat: '24h'
+        };
+
+        // Currency symbols and exchange rates (relative to USD for conversion)
+        const currencies = {
+            USD: { symbol: '$', name: 'US Dollar', rate: 1.00 },
+            EUR: { symbol: '€', name: 'Euro', rate: 0.92 },
+            GBP: { symbol: '£', name: 'British Pound', rate: 0.79 },
+            DZD: { symbol: 'دج', name: 'Algerian Dinar', rate: 134.50 }
+        };
+
+        // Load settings from localStorage
+        function loadSettings() {
+            const saved = localStorage.getItem('appSettings');
+            if (saved) {
+                currentSettings = JSON.parse(saved);
+                applySettingsToForm();
+            }
+            updateCurrencyPreview();
+            updateTimePreview();
+        }
+
+        // Apply settings to form elements
+        function applySettingsToForm() {
+            document.getElementById('currencySelect').value = currentSettings.currency;
+            document.getElementById('currencyPosition').value = currentSettings.currencyPosition;
+            document.getElementById('decimalPlaces').value = currentSettings.decimalPlaces;
+            document.getElementById('timezoneSelect').value = currentSettings.timezone;
+            document.getElementById('dateFormat').value = currentSettings.dateFormat;
+            document.getElementById('timeFormat').value = currentSettings.timeFormat;
+            
+            // Load company info from localStorage
+            const companyName = localStorage.getItem('companyName') || 'InvenTrack Solutions';
+            const supportEmail = localStorage.getItem('supportEmail') || 'contact@inventrack.com';
+            const companyAddress = localStorage.getItem('companyAddress') || '123 Business Avenue, Tech District';
+            const taxId = localStorage.getItem('taxId') || 'TRN-5544332211';
+            
+            document.getElementById('companyName').value = companyName;
+            document.getElementById('supportEmail').value = supportEmail;
+            document.getElementById('companyAddress').value = companyAddress;
+            document.getElementById('taxId').value = taxId;
+        }
+
+        // Format price according to current settings
+        function formatPrice(amount) {
+            const decimals = parseInt(currentSettings.decimalPlaces);
+            const formattedAmount = amount.toFixed(decimals);
+            const currencyInfo = currencies[currentSettings.currency];
+            const symbol = currencyInfo ? currencyInfo.symbol : '$';
+            
+            if (currentSettings.currencyPosition === 'before') {
+                return `${symbol}${formattedAmount}`;
+            } else {
+                return `${formattedAmount} ${symbol}`;
+            }
+        }
+
+        // Convert price between currencies
+        function convertPrice(amount, fromCurrency, toCurrency) {
+            const fromRate = currencies[fromCurrency]?.rate || 1;
+            const toRate = currencies[toCurrency]?.rate || 1;
+            return (amount / fromRate) * toRate;
+        }
+
+        // Update currency preview
+        function updateCurrencyPreview() {
+            const preview = formatPrice(100);
+            document.getElementById('currencyPreview').innerHTML = preview;
+        }
+
+        // Update time preview based on selected timezone
+        function updateTimePreview() {
+            const timezone = currentSettings.timezone;
+            const dateFormat = currentSettings.dateFormat;
+            const timeFormat = currentSettings.timeFormat;
+            
+            const now = new Date();
+            const options = {
+                timeZone: timezone,
+                hour12: timeFormat === '12h',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            
+            const timeStr = now.toLocaleTimeString('en-US', options);
+            const dateStr = formatDate(now, dateFormat);
+            
+            document.getElementById('timePreview').innerHTML = `${dateStr} ${timeStr} (${timezone.split('/').pop()})`;
+        }
+
+        // Format date according to selected format
+        function formatDate(date, format) {
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const year = date.getFullYear();
+            
+            switch(format) {
+                case 'DD/MM/YYYY': return `${day}/${month}/${year}`;
+                case 'MM/DD/YYYY': return `${month}/${day}/${year}`;
+                case 'YYYY-MM-DD': return `${year}-${month}-${day}`;
+                default: return `${day}/${month}/${year}`;
+            }
+        }
+
+        // Format date for display with timezone
+        function formatDateTime(date, timezone, dateFormat, timeFormat) {
+            const options = {
+                timeZone: timezone,
+                hour12: timeFormat === '12h',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            return new Date(date).toLocaleString('en-US', options);
+        }
+
+        // Save settings
+        function saveSettings() {
+            currentSettings = {
+                currency: document.getElementById('currencySelect').value,
+                currencyPosition: document.getElementById('currencyPosition').value,
+                decimalPlaces: parseInt(document.getElementById('decimalPlaces').value),
+                timezone: document.getElementById('timezoneSelect').value,
+                dateFormat: document.getElementById('dateFormat').value,
+                timeFormat: document.getElementById('timeFormat').value
+            };
+            
+            // Save company info
+            localStorage.setItem('companyName', document.getElementById('companyName').value);
+            localStorage.setItem('supportEmail', document.getElementById('supportEmail').value);
+            localStorage.setItem('companyAddress', document.getElementById('companyAddress').value);
+            localStorage.setItem('taxId', document.getElementById('taxId').value);
+            
+            localStorage.setItem('appSettings', JSON.stringify(currentSettings));
+            
+            // Dispatch event for other pages to update
+            window.dispatchEvent(new CustomEvent('settingsChanged', { detail: currentSettings }));
+            
+            updateCurrencyPreview();
+            updateTimePreview();
+            alert('Settings saved successfully!');
+        }
+
+        // Event listeners
+        document.getElementById('currencySelect').addEventListener('change', () => {
+            currentSettings.currency = document.getElementById('currencySelect').value;
+            updateCurrencyPreview();
+        });
+        
+        document.getElementById('currencyPosition').addEventListener('change', () => {
+            currentSettings.currencyPosition = document.getElementById('currencyPosition').value;
+            updateCurrencyPreview();
+        });
+        
+        document.getElementById('decimalPlaces').addEventListener('change', () => {
+            currentSettings.decimalPlaces = parseInt(document.getElementById('decimalPlaces').value);
+            updateCurrencyPreview();
+        });
+        
+        document.getElementById('timezoneSelect').addEventListener('change', () => {
+            currentSettings.timezone = document.getElementById('timezoneSelect').value;
+            updateTimePreview();
+        });
+        
+        document.getElementById('dateFormat').addEventListener('change', () => {
+            currentSettings.dateFormat = document.getElementById('dateFormat').value;
+            updateTimePreview();
+        });
+        
+        document.getElementById('timeFormat').addEventListener('change', () => {
+            currentSettings.timeFormat = document.getElementById('timeFormat').value;
+            updateTimePreview();
+        });
+        
+        document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+        
+        // Update time preview every second
+        setInterval(updateTimePreview, 1000);
+        
+        // Load settings on page load
+        loadSettings();
+        
+        // Expose formatPrice globally for other pages
+        window.formatPrice = formatPrice;
+        window.getCurrentSettings = () => currentSettings;
+        window.convertPrice = convertPrice;
+    </script>
 </body>
 </html>
