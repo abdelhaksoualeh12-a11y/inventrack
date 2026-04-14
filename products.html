@@ -295,7 +295,7 @@
             const isStaff = userRole === 'Staff';
 
             if (productsToRender.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem;">No products found</td></tr>';
+                tableBody.innerHTML = '<td><td colspan="8" style="text-align: center; padding: 2rem;">No products found</td</tr>';
                 return;
             }
 
@@ -308,26 +308,26 @@
                     actionsHtml = `
                 <button title="Edit Product" onclick='editProduct(${JSON.stringify(product)})'><i class="fas fa-edit"></i></button>
                 <button title="Delete Product" class="del" onclick="deleteProduct(${product.id})"><i class="fas fa-trash-alt"></i></button>
-                `;
-                    } else {
-                        actionsHtml = '<span style="color: #94a3b8;">View only</span>';
-                    }
+            `;
+                } else {
+                    actionsHtml = '<span style="color: #94a3b8;">View only</span>';
+                }
 
-                    tr.innerHTML = `
-                        <td style="font-weight: 600; color: #0f172a;">${escapeHtml(product.name)}</td>
-                        <td style="color: #64748b;">${escapeHtml(product.sku)}</td>
-                        <td>${escapeHtml(product.category)}</td>
-                        <td>${product.quantity}</td>
-                        <td data-price="${product.price}">${formatPrice(product.price)}</td>
-                        <td style="font-weight: 600; color: ${getStatusColor(product.status)};">${product.status}</td>
-                        <td data-date="${product.created_date}">${formatDate(product.created_date)}</td>
-                        <td class="table-actions" style="text-align: right;">
-                            ${actionsHtml}
-                        </td>
-                        `;
-                    tableBody.appendChild(tr);
-                });
-            }
+                tr.innerHTML = `
+            <td style="font-weight: 600; color: #0f172a;">${escapeHtml(product.name)}</td>
+            <td style="color: #64748b;">${escapeHtml(product.sku)}</td>
+            <td>${escapeHtml(product.category)}</td>
+            <td>${product.quantity}</td>
+            <td data-price="${product.price}">${formatPrice(product.price)}</td>
+            <td style="font-weight: 600; color: ${getStatusColor(product.status)};">${product.status}</td>
+            <td data-date="${product.created_date}">${formatDate(product.created_date)}</td>
+            <td class="table-actions" style="text-align: right;">
+                ${actionsHtml}
+            </td>
+        `;
+                tableBody.appendChild(tr);
+            });
+        }
         // Add this function to products.html to refresh only the status without full reload
         async function refreshProductStatus() {
             try {
@@ -340,7 +340,10 @@
                     if (existingRow) {
                         const cells = existingRow.querySelectorAll('td');
                         if (cells[3]) cells[3].innerText = newProduct.quantity;
-                        if (cells[4]) cells[4].innerText = `$${parseFloat(newProduct.price).toFixed(2)}`;
+                        if (cells[4]) {
+                            cells[4].innerText = formatPrice(newProduct.price);
+                            cells[4].setAttribute('data-price', newProduct.price);
+                        }
                         if (cells[5]) {
                             cells[5].innerText = newProduct.status;
                             cells[5].style.color = getStatusColor(newProduct.status);

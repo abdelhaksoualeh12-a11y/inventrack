@@ -15,7 +15,7 @@ const currencies = {
     USD: { symbol: '$', name: 'US Dollar', rate: 1.00 },
     EUR: { symbol: '€', name: 'Euro', rate: 0.85 },
     GBP: { symbol: '£', name: 'British Pound', rate: 0.74 },
-    DZD: { symbol: 'دج', name: 'Algerian Dinar', rate: 132.16 }  // 1 USD = 134.50 DZD
+    DZD: { symbol: 'دج', name: 'Algerian Dinar', rate: 132.16 }
 };
 
 // Add conversion function
@@ -56,6 +56,26 @@ function formatPrice(amount) {
     }
 }
 
+// Format date according to settings (without time)
+function formatDate(dateStr, format = null) {
+    if (!dateStr) return '';
+    const settings = getSettings();
+    const dateFormat = format || settings.dateFormat;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    
+    const day = d.getDate().toString().padStart(2, '0');
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const year = d.getFullYear();
+    
+    switch(dateFormat) {
+        case 'DD/MM/YYYY': return `${day}/${month}/${year}`;
+        case 'MM/DD/YYYY': return `${month}/${day}/${year}`;
+        case 'YYYY-MM-DD': return `${year}-${month}-${day}`;
+        default: return `${day}/${month}/${year}`;
+    }
+}
+
 // Format datetime according to settings (using device time)
 function formatDateTime(dateStr) {
     if (!dateStr) return '';
@@ -82,24 +102,9 @@ function formatDateTime(dateStr) {
     return `${formattedDate} ${timeStr}`;
 }
 
-// Format date only (without time)
+// Format date only (without time) - alias for formatDate
 function formatDateOnly(dateStr, format = null) {
-    if (!dateStr) return '';
-    const settings = getSettings();
-    const dateFormat = format || settings.dateFormat;
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-
-    const day = d.getDate().toString().padStart(2, '0');
-    const month = (d.getMonth() + 1).toString().padStart(2, '0');
-    const year = d.getFullYear();
-
-    switch (dateFormat) {
-        case 'DD/MM/YYYY': return `${day}/${month}/${year}`;
-        case 'MM/DD/YYYY': return `${month}/${day}/${year}`;
-        case 'YYYY-MM-DD': return `${year}-${month}-${day}`;
-        default: return `${day}/${month}/${year}`;
-    }
+    return formatDate(dateStr, format);
 }
 
 // Update all price displays on the page
@@ -149,7 +154,9 @@ window.getSettings = getSettings;
 window.saveSettings = saveSettings;
 window.formatPrice = formatPrice;
 window.formatDate = formatDate;
+window.formatDateOnly = formatDateOnly;
 window.formatDateTime = formatDateTime;
 window.applyGlobalSettings = applyGlobalSettings;
 window.updateAllPriceDisplays = updateAllPriceDisplays;
 window.updateAllDateDisplays = updateAllDateDisplays;
+window.convertCurrency = convertCurrency;
