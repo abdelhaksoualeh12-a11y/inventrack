@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <script src="validation.js"></script>
+    <script src="settings-manager.js"></script>
     <style>
         .toolbar {
             display: flex;
@@ -174,7 +175,6 @@
             </form>
         </div>
     </div>
-
     <script>
         const API_URL = 'https://inventrack-backend-2wso.onrender.com/api';
         const modal = document.getElementById('categoryModal');
@@ -211,7 +211,7 @@
             const isStaff = userRole === 'Staff';
 
             if (categoriesToRender.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No categories found</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No categories found</td</tr>';
                 return;
             }
 
@@ -222,22 +222,22 @@
                 let actionsHtml = '';
                 if (!isStaff) {
                     actionsHtml = `
-                <button title="Edit Category" onclick='editCategory(${JSON.stringify(category)})'><i class="fas fa-edit"></i></button>
-                <button title="Delete Category" class="del" onclick="deleteCategory(${category.id})"><i class="fas fa-trash-alt"></i></button>
-            `;
-                } else {
-                    actionsHtml = '<span style="color: #94a3b8;">View only</span>';
-                }
+                    <button title="Edit Category" onclick='editCategory(${JSON.stringify(category)})'><i class="fas fa-edit"></i></button>
+                    <button title="Delete Category" class="del" onclick="deleteCategory(${category.id})"><i class="fas fa-trash-alt"></i></button>
+                    `;
+                        } else {
+                            actionsHtml = '<span style="color: #94a3b8;">View only</span>';
+                        }
 
-                tr.innerHTML = `
-            <td style="font-weight: 600;">${escapeHtml(category.name)}</td>
-            <td style="color: #64748b;">${escapeHtml(category.description || '')}</td>
-            <td>${category.total_products || 0}</td>
-            <td style="color: #64748b;">${category.created_date || new Date().toISOString().split('T')[0]}</td>
-            <td class="table-actions" style="text-align: right;">
-                ${actionsHtml}
-            </td>
-        `;
+                        tr.innerHTML = `
+                            <td style="font-weight: 600;">${escapeHtml(category.name)}</td>
+                            <td style="color: #64748b;">${escapeHtml(category.description || '')}</td>
+                            <td>${category.total_products || 0}</td>
+                            <td data-date="${category.created_date}">${formatDateOnly(category.created_date)}</td>
+                            <td class="table-actions" style="text-align: right;">
+                                ${actionsHtml}
+                            </td>
+                        `;
                 tableBody.appendChild(tr);
             });
         }

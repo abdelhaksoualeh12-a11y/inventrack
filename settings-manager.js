@@ -10,13 +10,20 @@ const defaultSettings = {
     timeFormat: '24h'
 };
 
-// Currency symbols
+// Currency symbols and exchange rates (relative to USD)
 const currencies = {
     USD: { symbol: '$', name: 'US Dollar', rate: 1.00 },
-    EUR: { symbol: '€', name: 'Euro', rate: 0.92 },
-    GBP: { symbol: '£', name: 'British Pound', rate: 0.79 },
-    DZD: { symbol: 'دج', name: 'Algerian Dinar', rate: 134.50 }
+    EUR: { symbol: '€', name: 'Euro', rate: 0.85 },
+    GBP: { symbol: '£', name: 'British Pound', rate: 0.74 },
+    DZD: { symbol: 'دج', name: 'Algerian Dinar', rate: 132.16 }  // 1 USD = 134.50 DZD
 };
+
+// Add conversion function
+function convertCurrency(amount, fromCurrency, toCurrency) {
+    const fromRate = currencies[fromCurrency]?.rate || 1;
+    const toRate = currencies[toCurrency]?.rate || 1;
+    return (amount / fromRate) * toRate;
+}
 
 // Get current settings
 function getSettings() {
@@ -41,7 +48,7 @@ function formatPrice(amount) {
     const formattedAmount = parseFloat(amount).toFixed(decimals);
     const currencyInfo = currencies[settings.currency];
     const symbol = currencyInfo ? currencyInfo.symbol : '$';
-    
+
     if (settings.currencyPosition === 'before') {
         return `${symbol}${formattedAmount}`;
     } else {
@@ -49,44 +56,50 @@ function formatPrice(amount) {
     }
 }
 
-// Format date according to settings
-function formatDate(dateStr, format = null) {
-    if (!dateStr) return '';
-    const settings = getSettings();
-    const dateFormat = format || settings.dateFormat;
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    
-    const day = d.getDate().toString().padStart(2, '0');
-    const month = (d.getMonth() + 1).toString().padStart(2, '0');
-    const year = d.getFullYear();
-    
-    switch(dateFormat) {
-        case 'DD/MM/YYYY': return `${day}/${month}/${year}`;
-        case 'MM/DD/YYYY': return `${month}/${day}/${year}`;
-        case 'YYYY-MM-DD': return `${year}-${month}-${day}`;
-        default: return `${day}/${month}/${year}`;
-    }
-}
-
-// Format datetime according to settings
+// Format datetime according to settings (using device time)
 function formatDateTime(dateStr) {
     if (!dateStr) return '';
     const settings = getSettings();
     const date = new Date(dateStr);
     if (isNaN(date.getTime())) return dateStr;
-    
+
     const formattedDate = formatDate(dateStr, settings.dateFormat);
-    
-    const options = {
-        timeZone: settings.timezone,
-        hour12: settings.timeFormat === '12h',
-        hour: '2-digit',
-        minute: '2-digit'
-    };
-    const timeStr = date.toLocaleTimeString('en-US', options);
-    
+
+    // Use device local time instead of timezone conversion
+    let hours = date.getHours();
+    let minutes = date.getMinutes();
+    let timeStr = '';
+
+    if (settings.timeFormat === '12h') {
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+    } else {
+        timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    }
+
     return `${formattedDate} ${timeStr}`;
+}
+
+// Format date only (without time)
+function formatDateOnly(dateStr, format = null) {
+    if (!dateStr) return '';
+    const settings = getSettings();
+    const dateFormat = format || settings.dateFormat;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+
+    const day = d.getDate().toString().padStart(2, '0');
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const year = d.getFullYear();
+
+    switch (dateFormat) {
+        case 'DD/MM/YYYY': return `${day}/${month}/${year}`;
+        case 'MM/DD/YYYY': return `${month}/${day}/${year}`;
+        case 'YYYY-MM-DD': return `${year}-${month}-${day}`;
+        default: return `${day}/${month}/${year}`;
+    }
 }
 
 // Update all price displays on the page
@@ -97,7 +110,7 @@ function updateAllPriceDisplays() {
             el.innerText = formatPrice(amount);
         }
     });
-    
+
     // Also update inventory value card
     const valueCard = document.querySelector('.card-stats[style*="border-top-color: #8b5cf6"] .value');
     if (valueCard && valueCard.dataset.price) {

@@ -36,51 +36,35 @@
         <div class="grid-3" style="margin-bottom: 2rem;">
             <div class="card-stats" style="border-top-color: #3b82f6;">
                 <h3>Total Products</h3>
-                <div class="value">24</div>
+                <div class="value">0</div>
             </div>
             <div class="card-stats" style="border-top-color: #10b981;">
                 <h3>Total Stock</h3>
-                <div class="value">845</div>
+                <div class="value">0</div>
             </div>
             <div class="card-stats" style="border-top-color: #8b5cf6;">
                 <h3>Inventory Value</h3>
-                <div class="value">$12,450</div>
+                <div class="value">0</div>
             </div>
             <div class="card-stats" style="border-top-color: #f43f5e;">
                 <h3>Low Stock Items</h3>
-                <div class="value">3</div>
+                <div class="value">0</div>
             </div>
             <div class="card-stats" style="border-top-color: #06b6d4;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                    <h3 style="margin-bottom: 0;">Stock In</h3>
-                    <select
-                        style="width: auto; padding: 0.1rem 0.3rem; font-size: 0.75rem; border-color: #e2e8f0; color: #64748b; border-radius: 4px; background: transparent;">
-                        <option>Today</option>
-                        <option selected>This Week</option>
-                        <option>This Month</option>
-                    </select>
-                </div>
-                <div class="value">120</div>
+                <h3>Stock In (Total)</h3>
+                <div class="value">0</div>
             </div>
             <div class="card-stats" style="border-top-color: #d946ef;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                    <h3 style="margin-bottom: 0;">Stock Out</h3>
-                    <select
-                        style="width: auto; padding: 0.1rem 0.3rem; font-size: 0.75rem; border-color: #e2e8f0; color: #64748b; border-radius: 4px; background: transparent;">
-                        <option>Today</option>
-                        <option selected>This Week</option>
-                        <option>This Month</option>
-                    </select>
-                </div>
-                <div class="value">45</div>
+                <h3>Stock Out (Total)</h3>
+                <div class="value">0</div>
             </div>
             <div class="card-stats" style="border-top-color: #ef4444;">
                 <h3>Out of Stock</h3>
-                <div class="value">1</div>
+                <div class="value">0</div>
             </div>
             <div class="card-stats" style="border-top-color: #64748b;">
                 <h3>Categories</h3>
-                <div class="value">8</div>
+                <div class="value">0</div>
             </div>
         </div>
 
@@ -251,16 +235,56 @@
                 const values = document.querySelectorAll('.card-stats .value');
                 if (values[0]) values[0].innerText = stats.total_products || 0;
                 if (values[1]) values[1].innerText = stats.total_stock || 0;
+                if (values[2]) {
+                    // This is inventory value - handled by loadInventoryValue
+                }
                 if (values[3]) values[3].innerText = stats.low_stock || 0;
-                if (values[7]) values[7].innerText = stats.total_categories || 0;
-
-                const outOfStockCard = document.querySelector('.card-stats[style*="border-top-color: #ef4444"] .value');
-                if (outOfStockCard) outOfStockCard.innerText = stats.out_of_stock || 0;
+                if (values[4]) values[4].innerText = stats.out_of_stock || 0;
+                if (values[5]) values[5].innerText = stats.total_categories || 0;
             } catch (error) {
                 console.error('Error loading dashboard stats:', error);
             }
         }
 
+        // Add this to load stock in/out totals
+        async function loadStockInOutTotals() {
+            try {
+                const response = await fetch(`${API_URL}/stock-movements`);
+                const movements = await response.json();
+
+                let totalIn = 0;
+                let totalOut = 0;
+
+                movements.forEach(m => {
+                    if (m.type === 'IN') {
+                        totalIn += m.quantity;
+                    } else {
+                        totalOut += m.quantity;
+                    }
+                });
+
+                // Update stock in/out cards if they exist
+                const stockInCard = document.querySelector('.card-stats[style*="border-top-color: #06b6d4"] .value');
+                const stockOutCard = document.querySelector('.card-stats[style*="border-top-color: #d946ef"] .value');
+
+                if (stockInCard) stockInCard.innerText = totalIn;
+                if (stockOutCard) stockOutCard.innerText = totalOut;
+            } catch (error) {
+                console.error('Error loading stock totals:', error);
+            }
+        }
+
+        // Add to refreshDashboard
+        async function refreshDashboard() {
+            await loadDashboardStats();
+            await loadInventoryValue();
+            await loadRecentMovements();
+            await loadLowStockAlerts();
+            await loadOutOfStockAlerts();
+            await loadStockInOutTotals(); // Add this line
+            await loadMostSoldProducts(document.getElementById('chartTimeRange')?.value || 'month');
+            applyGlobalSettings();
+        }
         async function loadInventoryValue() {
             try {
                 const response = await fetch(`${API_URL}/inventory-value`);
@@ -354,6 +378,7 @@
             await loadRecentMovements();
             await loadLowStockAlerts();
             await loadOutOfStockAlerts();
+            await loadStockInOutTotals();
             await loadMostSoldProducts(document.getElementById('chartTimeRange')?.value || 'month');
             applyGlobalSettings();
         }
