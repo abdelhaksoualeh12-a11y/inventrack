@@ -207,6 +207,9 @@
 
         function renderCategories(categoriesToRender) {
             tableBody.innerHTML = '';
+            const userRole = localStorage.getItem('userRole');
+            const isStaff = userRole === 'Staff';
+
             if (categoriesToRender.length === 0) {
                 tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No categories found</td></tr>';
                 return;
@@ -215,16 +218,26 @@
             categoriesToRender.forEach(category => {
                 const tr = document.createElement('tr');
                 tr.dataset.id = category.id;
-                tr.innerHTML = `
-                <td style="font-weight: 600;">${escapeHtml(category.name)}</td>
-                <td style="color: #64748b;">${escapeHtml(category.description || '')}</td>
-                <td>${category.total_products || 0}</td>
-                <td style="color: #64748b;">${category.created_date || new Date().toISOString().split('T')[0]}</td>
-                <td class="table-actions" style="text-align: right;">
-                    <button title="Edit Category" onclick='editCategory(${JSON.stringify(category)})'><i class="fas fa-edit"></i></button>
-                    <button title="Delete Category" class="del" onclick="deleteCategory(${category.id})"><i class="fas fa-trash-alt"></i></button>
-                </td>
+
+                let actionsHtml = '';
+                if (!isStaff) {
+                    actionsHtml = `
+                <button title="Edit Category" onclick='editCategory(${JSON.stringify(category)})'><i class="fas fa-edit"></i></button>
+                <button title="Delete Category" class="del" onclick="deleteCategory(${category.id})"><i class="fas fa-trash-alt"></i></button>
             `;
+                } else {
+                    actionsHtml = '<span style="color: #94a3b8;">View only</span>';
+                }
+
+                tr.innerHTML = `
+            <td style="font-weight: 600;">${escapeHtml(category.name)}</td>
+            <td style="color: #64748b;">${escapeHtml(category.description || '')}</td>
+            <td>${category.total_products || 0}</td>
+            <td style="color: #64748b;">${category.created_date || new Date().toISOString().split('T')[0]}</td>
+            <td class="table-actions" style="text-align: right;">
+                ${actionsHtml}
+            </td>
+        `;
                 tableBody.appendChild(tr);
             });
         }
@@ -326,12 +339,20 @@
         window.addEventListener('click', (e) => {
             if (e.target === modal) modal.classList.remove('active');
         });
+        // Apply Staff restrictions for categories page
+        function applyStaffRestrictions() {
+            const userRole = localStorage.getItem('userRole');
+            if (userRole === 'Staff') {
+                const addBtn = document.getElementById('addCatBtn');
+                if (addBtn) addBtn.style.display = 'none';
+            }
+        }
 
-        // Add search listener
         const searchInput = document.querySelector('.search-wrapper input');
         if (searchInput) searchInput.addEventListener('input', filterCategories);
 
         loadCategories();
+        applyStaffRestrictions();
     </script>
 </body>
 

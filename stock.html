@@ -126,236 +126,224 @@
     </main>
 
     <script>
-        const API_URL = 'https://inventrack-backend-2wso.onrender.com/api';
-        const historyBody = document.getElementById('historyTableBody');
+    const API_URL = 'https://inventrack-backend-2wso.onrender.com/api';
+    const historyBody = document.getElementById('historyTableBody');
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, function (m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function (m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    async function loadMovements() {
+        try {
+            const response = await fetch(`${API_URL}/stock-movements`);
+            const movements = await response.json();
+
+            if (movements.length === 0) {
+                historyBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 2rem 0;">No recent movements recorded.</td></tr>`;
+                return;
+            }
+
+            historyBody.innerHTML = '';
+            movements.forEach(m => {
+                const tr = document.createElement('tr');
+                const typeHtml = m.type === 'IN'
+                    ? '<span style="color: #10b981; font-weight: 600;"><i class="fas fa-arrow-down" style="margin-right: 4px;"></i> IN</span>'
+                    : '<span style="color: #ef4444; font-weight: 600;"><i class="fas fa-arrow-up" style="margin-right: 4px;"></i> OUT</span>';
+
+                tr.innerHTML = `
+                    <td style="color: #64748b;">${m.date}</td>
+                    <td style="font-weight: 600; color: #0f172a;">${escapeHtml(m.product_name)}</td>
+                    <td>${typeHtml}</td>
+                    <td>${m.quantity}</td>
+                    <td style="color: #64748b;">${escapeHtml(m.details || 'N/A')}</td>
+                `;
+                historyBody.appendChild(tr);
             });
+        } catch (error) {
+            console.error('Error loading movements:', error);
         }
+    }
 
-        // Load stock movement history
-        async function loadMovements() {
-            try {
-                const response = await fetch(`${API_URL}/stock-movements`);
-                const movements = await response.json();
+    async function loadProductsForDropdowns() {
+        try {
+            const response = await fetch(`${API_URL}/products`);
+            if (!response.ok) {
+                console.error('Failed to fetch products:', response.status);
+                return;
+            }
+            const products = await response.json();
 
-                if (movements.length === 0) {
-                    historyBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 2rem 0;">No recent movements recorded.</td></tr>`;
-                    return;
-                }
-
-                historyBody.innerHTML = '';
-                movements.forEach(m => {
-                    const tr = document.createElement('tr');
-                    const typeHtml = m.type === 'IN'
-                        ? '<span style="color: #10b981; font-weight: 600;"><i class="fas fa-arrow-down" style="margin-right: 4px;"></i> IN</span>'
-                        : '<span style="color: #ef4444; font-weight: 600;"><i class="fas fa-arrow-up" style="margin-right: 4px;"></i> OUT</span>';
-
-                    tr.innerHTML = `
-                        <td style="color: #64748b;">${m.date}</td>
-                        <td style="font-weight: 600; color: #0f172a;">${escapeHtml(m.product_name)}</td>
-                        <td>${typeHtml}</td>
-                        <td>${m.quantity}</td>
-                        <td style="color: #64748b;">${escapeHtml(m.details || 'N/A')}</td>
-                    `;
-                    historyBody.appendChild(tr);
+            const stockInSelect = document.getElementById('stockInProduct');
+            if (stockInSelect) {
+                stockInSelect.innerHTML = '<option value="">-- Choose Product --</option>';
+                products.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.id;
+                    option.textContent = `${p.name} (Stock: ${p.quantity})`;
+                    option.dataset.quantity = p.quantity;
+                    stockInSelect.appendChild(option);
                 });
-            } catch (error) {
-                console.error('Error loading movements:', error);
             }
-        }
 
-        // Load products for dropdowns with current stock info
-        async function loadProductsForDropdowns() {
+            const stockOutSelect = document.getElementById('stockOutProduct');
+            if (stockOutSelect) {
+                stockOutSelect.innerHTML = '<option value="">-- Choose Product --</option>';
+                products.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.id;
+                    option.textContent = `${p.name} (Stock: ${p.quantity})`;
+                    option.dataset.quantity = p.quantity;
+                    stockOutSelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading products:', error);
+        }
+    }
+
+    const stockInForm = document.getElementById('stockInForm');
+    if (stockInForm) {
+        stockInForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const productSelect = document.getElementById('stockInProduct');
+            const productId = productSelect.value;
+            const productName = productSelect.options[productSelect.selectedIndex]?.text.split(' (Stock:')[0];
+            const qty = parseInt(document.getElementById('stockInQuantity').value);
+            const supplier = document.getElementById('stockInSupplier').value;
+
+            if (!productId) {
+                alert('Please select a product');
+                return;
+            }
+            if (!qty || qty <= 0) {
+                alert('Please enter a valid quantity greater than 0');
+                return;
+            }
+
             try {
-                const response = await fetch(`${API_URL}/products`);
-                const products = await response.json();
+                const response = await fetch(`${API_URL}/stock-movements`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        product_id: parseInt(productId),
+                        product_name: productName,
+                        type: 'IN',
+                        quantity: qty,
+                        details: supplier ? `Supplier: ${supplier}` : 'Stock In'
+                    })
+                });
 
-                // Update Stock In product dropdown
-                const stockInSelect = document.getElementById('stockInProduct');
-                if (stockInSelect) {
-                    stockInSelect.innerHTML = '<option value="">-- Choose Product --</option>';
-                    products.forEach(p => {
-                        const option = document.createElement('option');
-                        option.value = p.id;
-                        option.textContent = `${p.name} (Stock: ${p.quantity})`;
-                        option.dataset.quantity = p.quantity;
-                        stockInSelect.appendChild(option);
-                    });
-                }
-
-                // Update Stock Out product dropdown
-                const stockOutSelect = document.getElementById('stockOutProduct');
-                if (stockOutSelect) {
-                    stockOutSelect.innerHTML = '<option value="">-- Choose Product --</option>';
-                    products.forEach(p => {
-                        const option = document.createElement('option');
-                        option.value = p.id;
-                        option.textContent = `${p.name} (Stock: ${p.quantity})`;
-                        option.dataset.quantity = p.quantity;
-                        stockOutSelect.appendChild(option);
-                    });
+                if (response.ok) {
+                    await loadMovements();
+                    await loadProductsForDropdowns();
+                    stockInForm.reset();
+                    window.dispatchEvent(new CustomEvent('stockMovementChanged'));
+                    alert(`✅ Stock In recorded! Added ${qty} units of ${productName}`);
+                } else {
+                    const error = await response.json();
+                    alert('Failed to record stock in: ' + error.error);
                 }
             } catch (error) {
-                console.error('Error loading products:', error);
-            }
-        }
-
-        // Handle Stock In form
-        const stockInForm = document.getElementById('stockInForm');
-        if (stockInForm) {
-            stockInForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-
-                const productSelect = document.getElementById('stockInProduct');
-                const productId = productSelect.value;
-                const productName = productSelect.options[productSelect.selectedIndex]?.text.split(' (Stock:')[0];
-                const qty = parseInt(document.getElementById('stockInQuantity').value);
-                const supplier = document.getElementById('stockInSupplier').value;
-
-                if (!productId) {
-                    alert('Please select a product');
-                    return;
-                }
-                if (!qty || qty <= 0) {
-                    alert('Please enter a valid quantity greater than 0');
-                    return;
-                }
-
-                try {
-                    const response = await fetch(`${API_URL}/stock-movements`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            product_id: parseInt(productId),
-                            product_name: productName,
-                            type: 'IN',
-                            quantity: qty,
-                            details: supplier ? `Supplier: ${supplier}` : 'Stock In'
-                        })
-                    });
-
-                    if (response.ok) {
-                        await loadMovements();
-                        await loadProductsForDropdowns();
-                        stockInForm.reset();
-                        alert(`✅ Stock In recorded! Added ${qty} units of ${productName}`);
-                    } else {
-                        const error = await response.json();
-                        alert('Failed to record stock in: ' + error.error);
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert('Error recording stock in');
-                }
-            });
-        }
-
-        // Handle Stock Out form with quantity validation
-        const stockOutForm = document.getElementById('stockOutForm');
-        if (stockOutForm) {
-            stockOutForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-
-                const productSelect = document.getElementById('stockOutProduct');
-                const productId = productSelect.value;
-                const productName = productSelect.options[productSelect.selectedIndex]?.text.split(' (Stock:')[0];
-                const currentStock = parseInt(productSelect.options[productSelect.selectedIndex]?.dataset.quantity || 0);
-                const qty = parseInt(document.getElementById('stockOutQuantity').value);
-                const reason = document.getElementById('stockOutReason').value;
-
-                if (!productId) {
-                    alert('Please select a product');
-                    return;
-                }
-                if (!qty || qty <= 0) {
-                    alert('Please enter a valid quantity greater than 0');
-                    return;
-                }
-                if (!reason || reason === '') {
-                    alert('Please select a reason for stock out');
-                    return;
-                }
-                if (qty > currentStock) {
-                    alert(`❌ Insufficient stock!\n\nAvailable: ${currentStock} units\nRequested: ${qty} units\n\nPlease reduce the quantity or add more stock first.`);
-                    return;
-                }
-
-                try {
-                    const response = await fetch(`${API_URL}/stock-movements`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            product_id: parseInt(productId),
-                            product_name: productName,
-                            type: 'OUT',
-                            quantity: qty,
-                            details: `Reason: ${reason}`
-                        })
-                    });
-
-                    if (response.ok) {
-                        await loadMovements();
-                        await loadProductsForDropdowns();
-                        stockOutForm.reset();
-                        alert(`✅ Stock Out recorded! Removed ${qty} units of ${productName}\nRemaining stock: ${currentStock - qty}`);
-                    } else {
-                        const error = await response.json();
-                        alert('Failed to record stock out: ' + error.error);
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert('Error recording stock out');
-                }
-            });
-        }
-
-        // Clear history - ACTUALLY DELETE FROM DATABASE
-        document.getElementById('clearHistoryBtn').addEventListener('click', async () => {
-            if (confirm('⚠️ WARNING: This will permanently delete ALL stock movement records from the database!\n\nThis action cannot be undone. Are you sure?')) {
-                try {
-                    const response = await fetch(`${API_URL}/stock-movements/clear-all`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`
-                        }
-                    });
-
-                    if (response.ok) {
-                        await loadMovements();
-                        alert('✅ All stock movement records have been permanently deleted.');
-                    } else {
-                        const error = await response.json();
-                        alert('Failed to clear records: ' + error.error);
-                    }
-                } catch (error) {
-                    console.error('Error clearing movements:', error);
-                    alert('Error clearing stock movement records');
-                }
+                console.error('Error:', error);
+                alert('Error recording stock in');
             }
         });
-        // After stock movement, also notify dashboard to refresh
-        if (response.ok) {
-            await loadMovements();
-            await loadProductsForDropdowns();
-            stockInForm.reset();
+    }
 
-            // Dispatch an event that dashboard can listen to
-            window.dispatchEvent(new CustomEvent('stockMovementChanged'));
+    const stockOutForm = document.getElementById('stockOutForm');
+    if (stockOutForm) {
+        stockOutForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-            alert(`✅ Stock In recorded! Added ${qty} units of ${productName}`);
+            const productSelect = document.getElementById('stockOutProduct');
+            const productId = productSelect.value;
+            const productName = productSelect.options[productSelect.selectedIndex]?.text.split(' (Stock:')[0];
+            const currentStock = parseInt(productSelect.options[productSelect.selectedIndex]?.dataset.quantity || 0);
+            const qty = parseInt(document.getElementById('stockOutQuantity').value);
+            const reason = document.getElementById('stockOutReason').value;
+
+            if (!productId) {
+                alert('Please select a product');
+                return;
+            }
+            if (!qty || qty <= 0) {
+                alert('Please enter a valid quantity greater than 0');
+                return;
+            }
+            if (!reason || reason === '') {
+                alert('Please select a reason for stock out');
+                return;
+            }
+            if (qty > currentStock) {
+                alert(`❌ Insufficient stock!\n\nAvailable: ${currentStock} units\nRequested: ${qty} units\n\nPlease reduce the quantity or add more stock first.`);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/stock-movements`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        product_id: parseInt(productId),
+                        product_name: productName,
+                        type: 'OUT',
+                        quantity: qty,
+                        details: `Reason: ${reason}`
+                    })
+                });
+
+                if (response.ok) {
+                    await loadMovements();
+                    await loadProductsForDropdowns();
+                    stockOutForm.reset();
+                    window.dispatchEvent(new CustomEvent('stockMovementChanged'));
+                    alert(`✅ Stock Out recorded! Removed ${qty} units of ${productName}\nRemaining stock: ${currentStock - qty}`);
+                } else {
+                    const error = await response.json();
+                    alert('Failed to record stock out: ' + error.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error recording stock out');
+            }
+        });
+    }
+
+    document.getElementById('clearHistoryBtn').addEventListener('click', async () => {
+        if (confirm('⚠️ WARNING: This will permanently delete ALL stock movement records from the database!\n\nThis action cannot be undone. Are you sure?')) {
+            try {
+                const response = await fetch(`${API_URL}/stock-movements/clear-all`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    await loadMovements();
+                    alert('✅ All stock movement records have been permanently deleted.');
+                } else {
+                    const error = await response.json();
+                    alert('Failed to clear records: ' + error.error);
+                }
+            } catch (error) {
+                console.error('Error clearing movements:', error);
+                alert('Error clearing stock movement records');
+            }
         }
-        // Load data on page load
-        loadProductsForDropdowns();
-        loadMovements();
-    </script>
+    });
+
+    loadProductsForDropdowns();
+    loadMovements();
+</script>
 </body>
 
 </html>

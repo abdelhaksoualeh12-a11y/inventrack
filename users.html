@@ -185,10 +185,9 @@
                 <div class="form-group" style="display: flex; gap: 1rem;">
                     <div style="flex: 1;">
                         <label>Role</label>
-                        <select id="userRole">
+                        <select id="userRole" required>
                             <option value="Staff">Staff</option>
                             <option value="Manager">Manager</option>
-                            <option value="Administrator">Administrator</option>
                         </select>
                     </div>
                     <div style="flex: 1;">
@@ -204,19 +203,6 @@
                     <input type="password" id="userPassword" placeholder="Leave empty for default (password123)">
                     <small style="color: #64748b;">Leave blank to use default password (password123)</small>
                 </div>
-
-                <label
-                    style="margin-top: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; margin-bottom: 1rem;">Direct
-                    Permissions</label>
-                <div class="checkbox-group"><input type="checkbox" checked id="perm1"><label for="perm1">View Products &
-                        Stock</label></div>
-                <div class="checkbox-group"><input type="checkbox" id="perm2"><label for="perm2">Add/Edit
-                        Details</label></div>
-                <div class="checkbox-group"><input type="checkbox" id="perm3"><label for="perm3">Delete Records</label>
-                </div>
-                <div class="checkbox-group"><input type="checkbox" id="perm4"><label for="perm4">View Financial
-                        Reports</label></div>
-
                 <button type="submit" class="btn-primary"
                     style="margin-top: 1.5rem; padding: 0.8rem; font-size: 1.1rem;">Save User</button>
             </form>
@@ -233,15 +219,45 @@
         const modalTitle = document.getElementById('modalTitle');
 
         let editingId = null;
+        const currentUserRole = localStorage.getItem('userRole');
+        const currentUserId = parseInt(localStorage.getItem('userId'));
 
-        // Load users from backend
+        // Apply role-based restrictions on page load
+        function applyRoleRestrictions() {
+            if (currentUserRole === 'Manager') {
+                // Managers can only add Staff users
+                const roleSelect = document.getElementById('userRole');
+                if (roleSelect) {
+                    roleSelect.innerHTML = '<option value="Staff">Staff</option>';
+                }
+
+                // Hide the "Add User" button? No, let them add Staff users
+                // But maybe show a message
+                const toolbar = document.querySelector('.toolbar');
+                if (toolbar && !document.querySelector('.manager-info')) {
+                    const infoDiv = document.createElement('div');
+                    infoDiv.className = 'manager-info';
+                    infoDiv.style.cssText = 'background: #fef3c7; padding: 0.5rem 1rem; border-radius: 8px; margin-bottom: 1rem; color: #d97706; font-size: 0.9rem;';
+                    infoDiv.innerHTML = '<i class="fas fa-info-circle"></i> As Manager, you can only add and manage Staff users.';
+                    toolbar.parentNode.insertBefore(infoDiv, toolbar.nextSibling);
+                }
+            }
+        }
+
+        // Load users from backend with role-based filtering
         async function loadUsers() {
             try {
                 const response = await fetch(`${API_URL}/users`);
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
                 }
-                const users = await response.json();
+                let users = await response.json();
+
+                // Filter users based on role
+                if (currentUserRole === 'Manager') {
+                    // Managers only see Staff users
+                    users = users.filter(user => user.role === 'Staff');
+                }
 
                 tableBody.innerHTML = '';
                 if (users.length === 0) {
@@ -260,16 +276,35 @@
                         ? '<span class="badge badge-success">Active</span>'
                         : '<span class="badge badge-error">Inactive</span>';
 
+                    // Hide edit/delete buttons for:
+                    // 1. Admin users when logged in as Manager
+                    // 2. Own account (can't delete self)
+                    const isOwnAccount = currentUserId === user.id;
+                    const isAdmin = user.role === 'Administrator';
+                    const isManager = user.role === 'Manager';
+                    const showActions = !isOwnAccount && !(currentUserRole === 'Manager' && (isAdmin || isManager));
+
+                    let actionsHtml = '';
+                    if (showActions) {
+                        actionsHtml = `
+                        <button title="Edit" onclick='editUser(${JSON.stringify(user)})'><i class="fas fa-edit"></i></button>
+                        <button title="Delete" class="del" onclick="deleteUser(${user.id})"><i class="fas fa-trash-alt"></i></button>
+                    `;
+                    } else if (isOwnAccount) {
+                        actionsHtml = '<span style="color: #94a3b8;">(You)</span>';
+                    } else {
+                        actionsHtml = '<span style="color: #94a3b8;">Restricted</span>';
+                    }
+
                     tr.innerHTML = `
-                <td style="font-weight: 600; color: #0f172a;">${escapeHtml(user.name)}</td>
-                <td>${escapeHtml(user.email)}</td>
-                <td>${roleBadge}</td>
-                <td>${statusBadge}</td>
-                <td class="table-actions" style="text-align: right;">
-                    <button title="Edit" onclick='editUser(${JSON.stringify(user)})'><i class="fas fa-edit"></i></button>
-                    <button title="Delete" class="del" onclick="deleteUser(${user.id})"><i class="fas fa-trash-alt"></i></button>
-                </td>
-            `;
+                    <td style="font-weight: 600; color: #0f172a;">${escapeHtml(user.name)}</td>
+                    <td>${escapeHtml(user.email)}</td>
+                    <td>${roleBadge}</td>
+                    <td>${statusBadge}</td>
+                    <td class="table-actions" style="text-align: right;">
+                        ${actionsHtml}
+                    </td>
+                `;
                     tableBody.appendChild(tr);
                 });
             } catch (error) {
@@ -288,7 +323,6 @@
             });
         }
 
-        // Add/Update user
         // Add/Update user
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -326,6 +360,8 @@
                     modal.classList.remove('active');
                     form.reset();
                     editingId = null;
+                    // Reapply role restrictions after modal close
+                    applyRoleRestrictions();
                 } else {
                     const error = await response.json();
                     alert('Failed to save user: ' + error.error);
@@ -335,6 +371,7 @@
                 alert('Failed to save user');
             }
         });
+
         window.deleteUser = async (id) => {
             if (confirm('Are you sure you want to delete this user?')) {
                 try {
@@ -355,12 +392,14 @@
                 }
             }
         };
+
         window.editUser = (user) => {
             editingId = user.id;
             document.getElementById('userName').value = user.name;
             document.getElementById('userEmail').value = user.email;
             document.getElementById('userRole').value = user.role;
             document.getElementById('userStatus').value = user.status;
+            document.getElementById('userPassword').value = '';
             modalTitle.innerText = "Edit User";
             modal.classList.add('active');
         };
@@ -374,6 +413,8 @@
 
         closeBtn.addEventListener('click', () => modal.classList.remove('active'));
 
+        // Initialize
+        applyRoleRestrictions();
         loadUsers();
     </script>
 </body>

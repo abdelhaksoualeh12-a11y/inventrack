@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 🛡️ STAFF ROLE PERMISSIONS (View Only)
     // ==========================================
     if (userRole === 'Staff') {
-        // Only hide Users and Settings (Staff can see Dashboard, Products, Categories, Stock, Suppliers, Reports)
+        // Hide Users and Settings
         const restrictedLinks = document.querySelectorAll('a[href="users.html"], a[href="settings.html"]');
         restrictedLinks.forEach(link => link.style.display = 'none');
         
@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (button) button.style.display = 'none';
         });
         
-        // Prevent access to Users and Settings pages only
+        // Prevent access to Users and Settings pages
         if (currentPath.includes('users.html') || currentPath.includes('settings.html')) {
             alert('🚫 Access Denied: You do not have permission to view this page.');
             window.location.href = 'dashboard.html';
@@ -52,13 +52,13 @@ document.addEventListener("DOMContentLoaded", () => {
     // 🛡️ MANAGER ROLE PERMISSIONS
     // ==========================================
     if (userRole === 'Manager') {
-        // Managers cannot access Users or Settings
-        const restrictedLinks = document.querySelectorAll('a[href="users.html"], a[href="settings.html"]');
+        // Only hide Settings (Managers can see Users page)
+        const restrictedLinks = document.querySelectorAll('a[href="settings.html"]');
         restrictedLinks.forEach(link => link.style.display = 'none');
         
-        // Prevent manual URL access
-        if (currentPath.includes('users.html') || currentPath.includes('settings.html')) {
-            alert('🚫 Access Denied: Managers cannot access user management or system settings.');
+        // Prevent access to Settings page only
+        if (currentPath.includes('settings.html')) {
+            alert('🚫 Access Denied: Managers cannot access system settings.');
             window.location.href = 'dashboard.html';
         }
     }
