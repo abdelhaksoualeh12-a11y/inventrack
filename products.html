@@ -291,6 +291,9 @@
         // Render products based on filtered list
         function renderProducts(productsToRender) {
             tableBody.innerHTML = '';
+            const userRole = localStorage.getItem('userRole');
+            const isStaff = userRole === 'Staff';
+
             if (productsToRender.length === 0) {
                 tableBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem;">No products found</td></tr>';
                 return;
@@ -299,23 +302,32 @@
             productsToRender.forEach(product => {
                 const tr = document.createElement('tr');
                 tr.dataset.id = product.id;
-                tr.innerHTML = `
-                <td style="font-weight: 600; color: #0f172a;">${escapeHtml(product.name)}</td>
-                <td style="color: #64748b;">${escapeHtml(product.sku)}</td>
-                <td>${escapeHtml(product.category)}</td>
-                <td>${product.quantity}</td>
-                <td>$${parseFloat(product.price).toFixed(2)}</td>
-                <td style="font-weight: 600; color: ${getStatusColor(product.status)};">${product.status}</td>
-                <td style="color: #64748b;">${product.created_date}</td>
-                <td class="table-actions" style="text-align: right;">
-                    <button title="Edit Product" onclick='editProduct(${JSON.stringify(product)})'><i class="fas fa-edit"></i></button>
-                    <button title="Delete Product" class="del" onclick="deleteProduct(${product.id})"><i class="fas fa-trash-alt"></i></button>
-                </td>
+
+                let actionsHtml = '';
+                if (!isStaff) {
+                    actionsHtml = `
+                <button title="Edit Product" onclick='editProduct(${JSON.stringify(product)})'><i class="fas fa-edit"></i></button>
+                <button title="Delete Product" class="del" onclick="deleteProduct(${product.id})"><i class="fas fa-trash-alt"></i></button>
             `;
+                } else {
+                    actionsHtml = '<span style="color: #94a3b8;">View only</span>';
+                }
+
+                tr.innerHTML = `
+            <td style="font-weight: 600; color: #0f172a;">${escapeHtml(product.name)}</td>
+            <td style="color: #64748b;">${escapeHtml(product.sku)}</td>
+            <td>${escapeHtml(product.category)}</td>
+            <td>${product.quantity}</td>
+            <td>$${parseFloat(product.price).toFixed(2)}</td>
+            <td style="font-weight: 600; color: ${getStatusColor(product.status)};">${product.status}</td>
+            <td style="color: #64748b;">${product.created_date}</td>
+            <td class="table-actions" style="text-align: right;">
+                ${actionsHtml}
+            </td>
+        `;
                 tableBody.appendChild(tr);
             });
         }
-
         // Filter products based on search and dropdowns
         function filterProducts() {
             const searchInput = document.querySelector('.search-wrapper input');
@@ -514,6 +526,17 @@
 
         // Initialize page
         loadProducts();
+        // Apply Staff restrictions
+        function applyStaffRestrictions() {
+            const userRole = localStorage.getItem('userRole');
+            if (userRole === 'Staff') {
+                const addBtn = document.getElementById('addProdBtn');
+                if (addBtn) addBtn.style.display = 'none';
+            }
+        }
+
+        // Call this after loadProducts
+        applyStaffRestrictions();
         loadCategoriesForDropdowns();
         addFilterEventListeners();
     </script>

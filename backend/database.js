@@ -20,17 +20,17 @@ pool.connect((err, client, release) => {
 // Database wrapper methods
 const db = {
     query: (text, params) => pool.query(text, params),
-    
+
     get: async (text, params) => {
         const result = await pool.query(text, params);
         return result.rows[0];
     },
-    
+
     all: async (text, params) => {
         const result = await pool.query(text, params);
         return result.rows;
     },
-    
+
     run: async (text, params) => {
         const result = await pool.query(text, params);
         return { lastID: result.rows[0]?.id };
@@ -53,7 +53,7 @@ async function initDatabase() {
             )
         `);
         console.log('✅ Users table ready');
-        
+
         // Categories table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS categories (
@@ -65,7 +65,7 @@ async function initDatabase() {
             )
         `);
         console.log('✅ Categories table ready');
-        
+
         // Products table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS products (
@@ -81,7 +81,7 @@ async function initDatabase() {
             )
         `);
         console.log('✅ Products table ready');
-        
+
         // Suppliers table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS suppliers (
@@ -94,10 +94,11 @@ async function initDatabase() {
             )
         `);
         console.log('✅ Suppliers table ready');
-        
-        // Stock movements table
+
+        // Stock movements table with proper CASCADE
         await pool.query(`
-            CREATE TABLE IF NOT EXISTS stock_movements (
+            DROP TABLE IF EXISTS stock_movements CASCADE;
+            CREATE TABLE stock_movements (
                 id SERIAL PRIMARY KEY,
                 product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
                 product_name TEXT,
@@ -108,7 +109,7 @@ async function initDatabase() {
             )
         `);
         console.log('✅ Stock movements table ready');
-        
+
         // Insert admin user if not exists
         const result = await pool.query("SELECT * FROM users WHERE email = 'admin@inventrack.com'");
         if (result.rows.length === 0) {
@@ -122,7 +123,7 @@ async function initDatabase() {
         } else {
             console.log('✅ Admin user already exists');
         }
-        
+
         console.log('🎉 Database ready!');
     } catch (err) {
         console.error('Database initialization error:', err);

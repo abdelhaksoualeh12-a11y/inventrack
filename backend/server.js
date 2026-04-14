@@ -402,10 +402,50 @@ app.put('/api/users/:id', async (req, res) => {
 });
 
 app.delete('/api/users/:id', async (req, res) => {
+    const userId = req.params.id;
+    const token = req.headers.authorization?.split(' ')[1];
+    
+    if (!token) {
+        return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
     try {
-        await db.run(`DELETE FROM users WHERE id=$1 AND role != 'Administrator'`, [req.params.id]);
-        res.json({ message: 'User deleted' });
+        const decoded = jwt.verify(token, SECRET_KEY);
+        const currentUserRole = decoded.role;
+        
+        // Get target user
+        const targetUser = await db.get("SELECT role FROM users WHERE id = $1", [userId]);
+        
+        if (!targetUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        // Admin can delete anyone except themselves
+        if (currentUserRole === 'Administrator') {
+            if (decoded.id === parseInt(userId)) {
+                return res.status(403).json({ error: 'Cannot delete your own account' });
+            }
+            await db.run(`DELETE FROM users WHERE id = $1`, [userId]);
+            return res.json({ message: 'User deleted successfully' });
+        }
+        
+        // Managers can only delete Staff users
+        if (currentUserRole === 'Manager') {
+            if (targetUser.role === 'Administrator') {
+                return res.status(403).json({ error: 'Managers cannot delete administrators' });
+            }
+            if (targetUser.role === 'Manager') {
+                return res.status(403).json({ error: 'Managers cannot delete other managers' });
+            }
+            await db.run(`DELETE FROM users WHERE id = $1 AND role = 'Staff'`, [userId]);
+            return res.json({ message: 'Staff user deleted successfully' });
+        }
+        
+        // Staff cannot delete anyone
+        return res.status(403).json({ error: 'You do not have permission to delete users' });
+        
     } catch (error) {
+        console.error('Delete user error:', error);
         res.status(500).json({ error: error.message });
     }
 });
