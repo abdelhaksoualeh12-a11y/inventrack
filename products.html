@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
     <script src="validation.js"></script>
+    <script src="settings-manager.js"></script>
     <style>
         .toolbar {
             display: flex;
@@ -288,7 +289,6 @@
             return true;
         }
 
-        // Render products based on filtered list
         function renderProducts(productsToRender) {
             tableBody.innerHTML = '';
             const userRole = localStorage.getItem('userRole');
@@ -308,26 +308,26 @@
                     actionsHtml = `
                 <button title="Edit Product" onclick='editProduct(${JSON.stringify(product)})'><i class="fas fa-edit"></i></button>
                 <button title="Delete Product" class="del" onclick="deleteProduct(${product.id})"><i class="fas fa-trash-alt"></i></button>
-            `;
-                } else {
-                    actionsHtml = '<span style="color: #94a3b8;">View only</span>';
-                }
+                `;
+                    } else {
+                        actionsHtml = '<span style="color: #94a3b8;">View only</span>';
+                    }
 
-                tr.innerHTML = `
-            <td style="font-weight: 600; color: #0f172a;">${escapeHtml(product.name)}</td>
-            <td style="color: #64748b;">${escapeHtml(product.sku)}</td>
-            <td>${escapeHtml(product.category)}</td>
-            <td>${product.quantity}</td>
-            <td>$${parseFloat(product.price).toFixed(2)}</td>
-            <td style="font-weight: 600; color: ${getStatusColor(product.status)};">${product.status}</td>
-            <td style="color: #64748b;">${product.created_date}</td>
-            <td class="table-actions" style="text-align: right;">
-                ${actionsHtml}
-            </td>
-        `;
-                tableBody.appendChild(tr);
-            });
-        }
+                    tr.innerHTML = `
+                        <td style="font-weight: 600; color: #0f172a;">${escapeHtml(product.name)}</td>
+                        <td style="color: #64748b;">${escapeHtml(product.sku)}</td>
+                        <td>${escapeHtml(product.category)}</td>
+                        <td>${product.quantity}</td>
+                        <td data-price="${product.price}">${formatPrice(product.price)}</td>
+                        <td style="font-weight: 600; color: ${getStatusColor(product.status)};">${product.status}</td>
+                        <td data-date="${product.created_date}">${formatDate(product.created_date)}</td>
+                        <td class="table-actions" style="text-align: right;">
+                            ${actionsHtml}
+                        </td>
+                        `;
+                    tableBody.appendChild(tr);
+                });
+            }
         // Add this function to products.html to refresh only the status without full reload
         async function refreshProductStatus() {
             try {

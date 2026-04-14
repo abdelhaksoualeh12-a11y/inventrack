@@ -11,6 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="auth.js"></script>
     <script src="validation.js"></script>
+    <script src="settings-manager.js"></script>
 </head>
 
 <body>
@@ -252,11 +253,6 @@
                 if (values[1]) values[1].innerText = stats.total_stock || 0;
                 if (values[3]) values[3].innerText = stats.low_stock || 0;
                 if (values[7]) values[7].innerText = stats.total_categories || 0;
-                if (values[2]) {
-                    const inventoryValue = stats.total_stock * 100; // Placeholder calculation
-                    values[2].innerText = formatPrice(inventoryValue);
-                    values[2].setAttribute('data-price', inventoryValue);
-                }
 
                 const outOfStockCard = document.querySelector('.card-stats[style*="border-top-color: #ef4444"] .value');
                 if (outOfStockCard) outOfStockCard.innerText = stats.out_of_stock || 0;
@@ -271,8 +267,9 @@
                 const data = await response.json();
                 const valueCard = document.querySelector('.card-stats[style*="border-top-color: #8b5cf6"] .value');
                 if (valueCard) {
-                    valueCard.innerText = formatPrice(data.total_value || 0);
-                    valueCard.setAttribute('data-price', data.total_value || 0);
+                    const amount = data.total_value || 0;
+                    valueCard.innerText = formatPrice(amount);
+                    valueCard.setAttribute('data-price', amount);
                 }
             } catch (error) {
                 console.error('Error loading inventory value:', error);
@@ -296,7 +293,6 @@
                             <td style="color: ${m.type === 'IN' ? '#10b981' : '#ef4444'}; font-weight:600;">${m.type === 'IN' ? '+' : '-'}${m.quantity}</td>
                         </tr>
                     `).join('');
-                        applyGlobalSettings();
                     }
                 }
             } catch (error) {
@@ -359,6 +355,7 @@
             await loadLowStockAlerts();
             await loadOutOfStockAlerts();
             await loadMostSoldProducts(document.getElementById('chartTimeRange')?.value || 'month');
+            applyGlobalSettings();
         }
 
         window.addEventListener('stockMovementChanged', () => refreshDashboard());
