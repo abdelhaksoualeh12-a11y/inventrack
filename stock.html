@@ -341,7 +341,17 @@
                 }
             }
         });
+        // After stock movement, also notify dashboard to refresh
+        if (response.ok) {
+            await loadMovements();
+            await loadProductsForDropdowns();
+            stockInForm.reset();
 
+            // Dispatch an event that dashboard can listen to
+            window.dispatchEvent(new CustomEvent('stockMovementChanged'));
+
+            alert(`✅ Stock In recorded! Added ${qty} units of ${productName}`);
+        }
         // Load data on page load
         loadProductsForDropdowns();
         loadMovements();

@@ -264,7 +264,12 @@ button i { margin-right: 6px; }
     text-decoration: none;
     font-weight: 600;
 }
-
+.card-stats .value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #0f172a;
+    min-width: 80px;
+}
 
 /* Responsive Design Media Queries */
 @media screen and (max-width: 1024px) {

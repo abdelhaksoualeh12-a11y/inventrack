@@ -328,6 +328,35 @@
                 tableBody.appendChild(tr);
             });
         }
+        // Add this function to products.html to refresh only the status without full reload
+        async function refreshProductStatus() {
+            try {
+                const response = await fetch(`${API_URL}/products`);
+                const freshProducts = await response.json();
+
+                // Update existing rows with new quantities and statuses
+                freshProducts.forEach(newProduct => {
+                    const existingRow = document.querySelector(`tr[data-id='${newProduct.id}']`);
+                    if (existingRow) {
+                        const cells = existingRow.querySelectorAll('td');
+                        if (cells[3]) cells[3].innerText = newProduct.quantity;
+                        if (cells[4]) cells[4].innerText = `$${parseFloat(newProduct.price).toFixed(2)}`;
+                        if (cells[5]) {
+                            cells[5].innerText = newProduct.status;
+                            cells[5].style.color = getStatusColor(newProduct.status);
+                        }
+                    }
+                });
+
+                // Also update allProducts for filtering
+                allProducts = freshProducts;
+            } catch (error) {
+                console.error('Error refreshing status:', error);
+            }
+        }
+
+        // Set up auto-refresh for product status every 10 seconds
+        setInterval(refreshProductStatus, 10000);
         // Filter products based on search and dropdowns
         function filterProducts() {
             const searchInput = document.querySelector('.search-wrapper input');

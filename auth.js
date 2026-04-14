@@ -14,16 +14,25 @@ document.addEventListener("DOMContentLoaded", () => {
     const currentPath = window.location.pathname;
 
     // ==========================================
-    // 🛡️ STAFF ROLE PERMISSIONS
+    // 🛡️ STAFF ROLE PERMISSIONS (View Only)
     // ==========================================
     if (userRole === 'Staff') {
-        // Hide restricted sidebar links
-        const restrictedLinks = document.querySelectorAll('a[href="dashboard.html"], a[href="reports.html"], a[href="users.html"], a[href="settings.html"]');
+        // Only hide Users and Settings (Staff can see Dashboard, Products, Categories, Stock, Suppliers, Reports)
+        const restrictedLinks = document.querySelectorAll('a[href="users.html"], a[href="settings.html"]');
         restrictedLinks.forEach(link => link.style.display = 'none');
         
-        // Hide all Add/Edit/Delete buttons on Products page
+        // Hide all Add/Edit/Delete buttons across all pages
         const addProductBtn = document.getElementById('addProdBtn');
         if (addProductBtn) addProductBtn.style.display = 'none';
+        
+        const addCatBtn = document.getElementById('addCatBtn');
+        if (addCatBtn) addCatBtn.style.display = 'none';
+        
+        const addSupplierBtn = document.getElementById('addSupplierBtn');
+        if (addSupplierBtn) addSupplierBtn.style.display = 'none';
+        
+        const addUserBtn = document.getElementById('addUserBtn');
+        if (addUserBtn) addUserBtn.style.display = 'none';
         
         // Hide all Edit and Delete buttons in tables
         const actionButtons = document.querySelectorAll('.table-actions button, .del, .fa-edit, .fa-trash-alt');
@@ -31,22 +40,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const button = btn.closest('button') || btn;
             if (button) button.style.display = 'none';
         });
-        const addCatBtn = document.getElementById('addCatBtn');
-        if (addCatBtn) addCatBtn.style.display = 'none';
-        const addSupplierBtn = document.getElementById('addSupplierBtn');
-        if (addSupplierBtn) addSupplierBtn.style.display = 'none';
-        const addUserBtn = document.getElementById('addUserBtn');
-        if (addUserBtn) addUserBtn.style.display = 'none';
-        if (currentPath.includes('users.html') || currentPath.includes('settings.html') || 
-            currentPath.includes('reports.html') || currentPath.includes('categories.html')) {
+        
+        // Prevent access to Users and Settings pages only
+        if (currentPath.includes('users.html') || currentPath.includes('settings.html')) {
             alert('🚫 Access Denied: You do not have permission to view this page.');
-            window.location.href = 'products.html';
-        }
-
-        if (currentPath.includes('dashboard.html')) {
-
-            const editControls = document.querySelectorAll('.btn-primary, .btn-outline, .fa-edit');
-            editControls.forEach(ctrl => ctrl.style.display = 'none');
+            window.location.href = 'dashboard.html';
         }
     }
 
@@ -54,17 +52,20 @@ document.addEventListener("DOMContentLoaded", () => {
     // 🛡️ MANAGER ROLE PERMISSIONS
     // ==========================================
     if (userRole === 'Manager') {
+        // Managers cannot access Users or Settings
         const restrictedLinks = document.querySelectorAll('a[href="users.html"], a[href="settings.html"]');
         restrictedLinks.forEach(link => link.style.display = 'none');
         
+        // Prevent manual URL access
         if (currentPath.includes('users.html') || currentPath.includes('settings.html')) {
             alert('🚫 Access Denied: Managers cannot access user management or system settings.');
             window.location.href = 'dashboard.html';
         }
     }
     
-    // Admin has full access 
-
+    // Admin has full access - no restrictions
+    
+    // Display user name in sidebar if element exists
     const userNameSpan = document.getElementById('userNameDisplay');
     if (userNameSpan && userName) {
         userNameSpan.textContent = `Welcome, ${userName}`;
