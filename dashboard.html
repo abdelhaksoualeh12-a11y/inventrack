@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -37,7 +38,7 @@
     <main class="main-content">
         <h1 class="page-header">Dashboard Overview</h1>
 
-        <div class="grid-3" style="margin-bottom: 2rem;">
+        <div class="dashboard-stats">
             <div class="card-stats" style="border-top-color: #3b82f6;">
                 <h3>Total Products</h3>
                 <div class="value" id="totalProducts">0</div>
@@ -72,7 +73,7 @@
             </div>
         </div>
 
-        <div class="grid-2" style="grid-template-columns: 1.5fr 1fr;">
+        <div class="charts-row">
             <!-- Sales & Revenue Line Chart -->
             <section class="box-section" style="margin-bottom: 0;">
                 <h3 style="margin-bottom: 1rem;">
@@ -85,7 +86,7 @@
                         <option value="year">Last 12 Months</option>
                     </select>
                 </h3>
-                <div style="height: 300px; width: 100%;">
+                <div class="chart-container">
                     <canvas id="revenueChart"></canvas>
                 </div>
             </section>
@@ -96,39 +97,42 @@
                     <i class="fas fa-trophy" style="color:#f59e0b; margin-right:8px;"></i>
                     Most Profitable Products
                 </h3>
-                <div style="height: 300px; width: 100%;">
+                <div class="chart-container">
                     <canvas id="profitChart"></canvas>
                 </div>
             </section>
         </div>
 
-        <!-- Alerts Section -->
-        <div class="grid-2" style="grid-template-columns: 1fr 1fr; margin-top: 2rem;">
+        <div class="alerts-row">
             <section class="box-section" style="margin-bottom: 0;">
                 <h3 style="margin-bottom: 1rem;"><i class="fas fa-exclamation-triangle"
                         style="color:#f59e0b; margin-right:8px;"></i> Low Stock Alerts</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Product Name</th>
-                            <th>Current Qty</th>
-                        </tr>
-                    </thead>
-                    <tbody id="lowStockTableBody"></tbody>
-                </table>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; min-width: 300px;">
+                        <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Current Qty</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lowStockTableBody"></tbody>
+                    </table>
+                </div>
             </section>
             <section class="box-section" style="margin-bottom: 0;">
                 <h3 style="margin-bottom: 1rem;"><i class="fas fa-times-circle"
                         style="color:#ef4444; margin-right:8px;"></i> Out of Stock</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Product Name</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="outOfStockTableBody"></tbody>
-                </table>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; min-width: 300px;">
+                        <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="outOfStockTableBody"></tbody>
+                    </table>
+                </div>
             </section>
         </div>
     </main>
@@ -212,7 +216,6 @@
         // Load revenue chart data
         async function loadRevenueChart(range = 'month') {
             try {
-                // Get most profitable products for the chart
                 const productsResponse = await fetch(`${API_URL}/most-profitable-products?range=${range}`);
                 const productsData = await productsResponse.json();
 
@@ -230,7 +233,11 @@
                                 borderColor: '#3b82f6'
                             }]
                         },
-                        options: { responsive: true, maintainAspectRatio: false }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            aspectRatio: 1.5
+                        }
                     });
                     return;
                 }
@@ -249,7 +256,7 @@
                             borderColor: '#3b82f6',
                             backgroundColor: gradient,
                             borderWidth: 3,
-                            pointRadius: 4,
+                            pointRadius: window.innerWidth < 768 ? 2 : 4,
                             pointBackgroundColor: '#3b82f6',
                             pointBorderColor: 'white',
                             pointBorderWidth: 2,
@@ -259,7 +266,8 @@
                     },
                     options: {
                         responsive: true,
-                        maintainAspectRatio: false,
+                        maintainAspectRatio: true,
+                        aspectRatio: window.innerWidth < 768 ? 1 : 1.5,
                         plugins: {
                             legend: { display: false },
                             tooltip: {
@@ -274,9 +282,19 @@
                             y: {
                                 beginAtZero: true,
                                 grid: { color: '#e2e8f0' },
-                                ticks: { callback: value => formatPrice(value) }
+                                ticks: {
+                                    callback: value => formatPrice(value),
+                                    maxTicksLimit: window.innerWidth < 768 ? 5 : 8
+                                }
                             },
-                            x: { grid: { display: false } }
+                            x: {
+                                grid: { display: false },
+                                ticks: {
+                                    maxRotation: window.innerWidth < 768 ? 45 : 0,
+                                    autoSkip: true,
+                                    maxTicksLimit: window.innerWidth < 768 ? 5 : 10
+                                }
+                            }
                         }
                     }
                 });
@@ -308,7 +326,8 @@
                         options: {
                             indexAxis: 'y',
                             responsive: true,
-                            maintainAspectRatio: false
+                            maintainAspectRatio: true,
+                            aspectRatio: 1.5
                         }
                     });
                     return;
@@ -330,7 +349,8 @@
                     options: {
                         indexAxis: 'y',
                         responsive: true,
-                        maintainAspectRatio: false,
+                        maintainAspectRatio: true,
+                        aspectRatio: window.innerWidth < 768 ? 1 : 1.5,
                         plugins: {
                             legend: { display: false },
                             tooltip: {
@@ -345,9 +365,18 @@
                             x: {
                                 beginAtZero: true,
                                 grid: { color: '#e2e8f0' },
-                                ticks: { callback: value => formatPrice(value) }
+                                ticks: {
+                                    callback: value => formatPrice(value),
+                                    maxTicksLimit: window.innerWidth < 768 ? 5 : 8
+                                }
                             },
-                            y: { grid: { display: false } }
+                            y: {
+                                grid: { display: false },
+                                ticks: {
+                                    autoSkip: true,
+                                    maxTicksLimit: window.innerWidth < 768 ? 5 : 10
+                                }
+                            }
                         }
                     }
                 });
@@ -420,6 +449,11 @@
         }
 
         // Event listeners
+        window.addEventListener('resize', () => {
+            const range = document.getElementById('chartTimeRange')?.value || 'month';
+            loadRevenueChart(range);
+            loadProfitableProductsChart(range);
+        });
         document.getElementById('chartTimeRange')?.addEventListener('change', (e) => {
             const range = e.target.value;
             loadRevenueChart(range);

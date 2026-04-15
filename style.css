@@ -148,6 +148,32 @@ body {
     gap: 1rem;
 }
 
+/* ============ DASHBOARD GRID FIXES ============ */
+
+/* Dashboard stats grid - responsive */
+.dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/* Charts row - 2 columns on desktop, 1 on mobile */
+.charts-row {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/* Alerts row - 2 columns on desktop, 1 on mobile */
+.alerts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
 /* Cards */
 .card-stats {
     background: white;
@@ -180,6 +206,28 @@ body {
     line-height: 1.2;
 }
 
+/* Chart containers - prevent overflow */
+.chart-container {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    width: 100%;
+    overflow-x: auto;
+}
+
+.chart-container canvas {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 250px;
+}
+
+/* Fix for the revenue and profit charts */
+#revenueChart,
+#profitChart {
+    width: 100% !important;
+    max-width: 100%;
+}
+
 /* Box Sections */
 .box-section {
     background: white;
@@ -188,6 +236,7 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     border: 1px solid #e2e8f0;
     margin-bottom: 1.5rem;
+    overflow-x: auto;
 }
 
 .box-section h3 {
@@ -199,19 +248,7 @@ body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-}
-
-/* Grids - Responsive */
-.grid-2 {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
-}
-
-.grid-3 {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1.5rem;
+    flex-wrap: wrap;
 }
 
 /* Tables - Horizontal Scroll on Mobile */
@@ -726,8 +763,19 @@ tr:hover {
         padding: 1.5rem;
     }
 
-    .grid-3 {
+    .dashboard-stats {
         grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .charts-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .alerts-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
     }
 }
 
@@ -735,6 +783,14 @@ tr:hover {
 @media screen and (max-width: 768px) {
     body {
         flex-direction: column;
+    }
+
+    /* Prevent horizontal scroll on body */
+    html,
+    body {
+        overflow-x: hidden;
+        width: 100%;
+        position: relative;
     }
 
     .sidebar {
@@ -777,12 +833,17 @@ tr:hover {
         padding: 1rem;
     }
 
-    .grid-3 {
+    .dashboard-stats {
         grid-template-columns: repeat(2, 1fr);
         gap: 0.75rem;
     }
 
-    .grid-2 {
+    .charts-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .alerts-row {
         grid-template-columns: 1fr;
         gap: 1rem;
     }
@@ -793,6 +854,10 @@ tr:hover {
 
     .card-stats .value {
         font-size: 1.25rem;
+    }
+
+    .card-stats h3 {
+        font-size: 0.7rem;
     }
 
     .page-header {
@@ -874,12 +939,60 @@ tr:hover {
         width: 100%;
         justify-content: center;
     }
+
+    /* Chart fixes on mobile */
+    .chart-container {
+        padding: 1rem;
+        overflow-x: auto;
+    }
+
+    .chart-container canvas {
+        min-width: 280px;
+        min-height: 200px;
+    }
+
+    /* Fix tables in alerts section */
+    .box-section table {
+        min-width: 100%;
+    }
+
+    .box-section th,
+    .box-section td {
+        padding: 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    /* Fix alerts header on mobile */
+    .alerts-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .alert-stats {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
+    /* Fix tables to scroll horizontally */
+    .table-wrapper,
+    .box-section>div[style*="overflow-x"],
+    .history-content {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+        min-width: 500px;
+    }
 }
 
 /* Small Mobile */
 @media screen and (max-width: 480px) {
-    .grid-3 {
+    .dashboard-stats {
         grid-template-columns: 1fr;
+        gap: 0.75rem;
     }
 
     .card-stats {
@@ -908,119 +1021,24 @@ tr:hover {
         padding: 0.5rem;
         font-size: 0.7rem;
     }
-}
-/* ============ MOBILE FIXES - PREVENT ZOOM OUT ISSUES ============ */
 
-/* Prevent horizontal scroll on body */
-html, body {
-    overflow-x: hidden;
-    width: 100%;
-    position: relative;
-}
-
-/* Fix dashboard charts on mobile */
-@media screen and (max-width: 768px) {
-    /* Make charts container scrollable horizontally */
-    .grid-2 {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    /* Fix chart canvas sizing */
-    .box-section {
-        overflow-x: auto;
-        min-width: 0;
-    }
-    
-    canvas {
-        max-width: 100%;
-        height: auto !important;
-        min-height: 250px;
-    }
-    
-    /* Make sure charts don't overflow */
-    #revenueChart, #profitChart {
-        width: 100% !important;
-        min-width: 300px;
-    }
-    
-    /* Fix alerts page on mobile */
-    .alerts-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-    }
-    
-    .alert-stats {
-        width: 100%;
-        justify-content: space-between;
-    }
-    
-    .alert-card {
-        flex-direction: column;
-        text-align: center;
-    }
-    
-    .alert-icon {
-        margin: 0 auto;
-    }
-    
-    .alert-action {
-        width: 100%;
-    }
-    
-    .alert-action .btn-primary {
-        width: 100%;
-        justify-content: center;
-    }
-    
-    /* Fix tables to scroll horizontally */
-    .table-wrapper, 
-    .box-section > div[style*="overflow-x"],
-    .history-content {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    table {
-        min-width: 500px;
-    }
-    
-    /* Fix product cards grid */
-    .grid-3 {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media screen and (max-width: 480px) {
-    .grid-3 {
-        grid-template-columns: 1fr;
-    }
-    
     .alert-stats {
         flex-direction: column;
         gap: 0.5rem;
     }
-    
+
     .alert-stat {
         justify-content: space-between;
         width: 100%;
     }
 }
 
-/* Fix for chart responsiveness - ensure charts don't break layout */
-.chart-container canvas,
-.box-section canvas {
-    max-width: 100%;
-    height: auto !important;
-}
-
-/* Fix for the dashboard stats cards on very small screens */
+/* Extra small devices */
 @media screen and (max-width: 380px) {
     .card-stats .value {
         font-size: 1rem;
     }
-    
+
     .card-stats h3 {
         font-size: 0.6rem;
     }
