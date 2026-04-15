@@ -1,6 +1,6 @@
-// auth.js - Role Based Access Control with Strict Authentication
+// auth.js - Role Based Access Control with Active Page Highlighting
 
-(function() {
+(function () {
     // Check authentication immediately before DOM loads
     const token = localStorage.getItem('token');
     const userRole = localStorage.getItem('userRole');
@@ -34,13 +34,41 @@
         }
 
         // ==========================================
+        // 🎯 ACTIVE PAGE HIGHLIGHTING
+        // ==========================================
+        function highlightActivePage() {
+            const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+            const sidebarLinks = document.querySelectorAll('.sidebar a');
+
+            sidebarLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                // Remove active class from all links
+                link.classList.remove('active');
+
+                // Add active class to matching link
+                if (href === currentPage) {
+                    link.classList.add('active');
+                }
+                // Special case for index.html (login page)
+                if (currentPage === '' || currentPage === '/' || currentPage === 'index.html') {
+                    if (href === 'index.html') {
+                        link.classList.add('active');
+                    }
+                }
+            });
+        }
+
+        // Call the highlight function
+        highlightActivePage();
+
+        // ==========================================
         // 🛡️ STAFF ROLE PERMISSIONS (View Only)
         // ==========================================
         if (userRole === 'Staff') {
             // Hide Users and Settings links
             const restrictedLinks = document.querySelectorAll('a[href="users.html"], a[href="settings.html"]');
             restrictedLinks.forEach(link => link.style.display = 'none');
-            
+
             // Hide all Add buttons
             const addButtons = [
                 'addProdBtn', 'addCatBtn', 'addSupplierBtn', 'addUserBtn'
@@ -49,7 +77,7 @@
                 const btn = document.getElementById(id);
                 if (btn) btn.style.display = 'none';
             });
-            
+
             // Hide all Edit and Delete buttons in tables (run after small delay to ensure tables are populated)
             setTimeout(() => {
                 const actionButtons = document.querySelectorAll('.table-actions button, .del, .fa-edit, .fa-trash-alt');
@@ -58,10 +86,10 @@
                     if (button) button.style.display = 'none';
                 });
             }, 500);
-            
+
             // Prevent access to Users and Settings pages
             if (currentPath.includes('users.html') || currentPath.includes('settings.html')) {
-                alert('🚫 Access Denied: You do not have permission to view this page.');
+                showWarning('Access Denied: You do not have permission to view this page.');
                 window.location.href = 'dashboard.html';
             }
         }
@@ -73,16 +101,16 @@
             // Only hide Settings (Managers can see Users page)
             const restrictedLinks = document.querySelectorAll('a[href="settings.html"]');
             restrictedLinks.forEach(link => link.style.display = 'none');
-            
+
             // Prevent access to Settings page only
             if (currentPath.includes('settings.html')) {
-                alert('🚫 Access Denied: Managers cannot access system settings.');
+                showWarning('Access Denied: Managers cannot access system settings.');
                 window.location.href = 'dashboard.html';
             }
         }
-        
+
         // Admin has full access - no restrictions
-        
+
         // Display user name in sidebar if element exists
         const userNameSpan = document.getElementById('userNameDisplay');
         if (userNameSpan && userName) {
