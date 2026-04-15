@@ -124,7 +124,7 @@
         <a href="stock.html"><i class="fas fa-exchange-alt"></i> Stock Ops</a>
         <a href="suppliers.html"><i class="fas fa-truck-loading"></i> Suppliers</a>
         <a href="reports.html"><i class="fas fa-chart-pie"></i> Sales</a>
-        <a href="prediction.html"><i class="fas fa-chart-scatter"></i> Predictions</a>
+        <a href="prediction.html"><i class="fas fa-chart-line"></i> Predictions</a>
         <a href="alerts.html"><i class="fas fa-bell"></i> Alerts</a>
         <a href="users.html"><i class="fas fa-users-cog"></i> Users</a>
         <a href="settings.html"><i class="fas fa-cog"></i> Settings</a>
@@ -330,8 +330,8 @@
                     <td style="color: #64748b;">${escapeHtml(product.sku)}</td>
                     <td>${escapeHtml(product.category)}</td>
                     <td>${product.quantity}</td>
-                    <td data-price="${product.buying_price}">${formatPrice(product.buying_price)}</td>
-                    <td data-price="${product.selling_price}">${formatPrice(product.selling_price)}</td>
+                    <td data-price="${product.buying_price || 0}" data-original-price="${product.buying_price || 0}">${formatPrice(product.buying_price || 0)}</td>
+                    <td data-price="${product.selling_price || 0}" data-original-price="${product.selling_price || 0}">${formatPrice(product.selling_price || 0)}</td>
                     <td style="font-weight: 600; color: ${getStatusColor(product.status)};">${product.status}</td>
                     <td data-date="${product.created_date}">${formatDate(product.created_date)}</td>
                     <td class="table-actions" style="text-align: right;">
@@ -341,7 +341,6 @@
                 tableBody.appendChild(tr);
             });
         }
-        // Add this function to products.html to refresh only the status without full reload
         // Add this function to products.html to refresh only the status without full reload
         async function refreshProductStatus() {
             try {
@@ -355,16 +354,31 @@
                         const cells = existingRow.querySelectorAll('td');
                         // Quantity is at index 3
                         if (cells[3]) cells[3].innerText = newProduct.quantity;
-                        // Buying price is at index 4
+
+                        // Buying price is at index 4 - KEEP the original price in dataset
                         if (cells[4]) {
-                            cells[4].innerText = formatPrice(newProduct.buying_price || 0);
-                            cells[4].setAttribute('data-price', newProduct.buying_price || 0);
+                            // Only update if the actual price changed in database
+                            const currentOriginal = parseFloat(cells[4].dataset.originalPrice) || 0;
+                            if (Math.abs(currentOriginal - (newProduct.buying_price || 0)) > 0.01) {
+                                cells[4].dataset.originalPrice = newProduct.buying_price || 0;
+                                cells[4].dataset.price = newProduct.buying_price || 0;
+                            }
+                            // Re-format with current currency settings
+                            cells[4].innerText = formatPrice(parseFloat(cells[4].dataset.originalPrice) || 0);
                         }
-                        // Selling price is at index 5
+
+                        // Selling price is at index 5 - KEEP the original price in dataset
                         if (cells[5]) {
-                            cells[5].innerText = formatPrice(newProduct.selling_price || 0);
-                            cells[5].setAttribute('data-price', newProduct.selling_price || 0);
+                            // Only update if the actual price changed in database
+                            const currentOriginal = parseFloat(cells[5].dataset.originalPrice) || 0;
+                            if (Math.abs(currentOriginal - (newProduct.selling_price || 0)) > 0.01) {
+                                cells[5].dataset.originalPrice = newProduct.selling_price || 0;
+                                cells[5].dataset.price = newProduct.selling_price || 0;
+                            }
+                            // Re-format with current currency settings
+                            cells[5].innerText = formatPrice(parseFloat(cells[5].dataset.originalPrice) || 0);
                         }
+
                         // Status is at index 6
                         if (cells[6]) {
                             cells[6].innerText = newProduct.status;
@@ -373,13 +387,8 @@
                     }
                 });
 
-                // Also update allProducts for filtering
+                // Also update allProducts for filtering (but keep the original prices)
                 allProducts = freshProducts;
-
-                // Re-apply global settings for currency formatting
-                if (typeof applyGlobalSettings === 'function') {
-                    applyGlobalSettings();
-                }
             } catch (error) {
                 console.error('Error refreshing status:', error);
             }
