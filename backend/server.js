@@ -116,6 +116,7 @@ app.post('/api/admin/reset-password', async (req, res) => {
 });
 
 // ============ PRODUCTS ============
+// ============ PRODUCTS (Updated with buying/selling price) ============
 app.get('/api/products', async (req, res) => {
     try {
         const rows = await db.all("SELECT * FROM products ORDER BY created_date DESC", []);
@@ -126,13 +127,13 @@ app.get('/api/products', async (req, res) => {
 });
 
 app.post('/api/products', async (req, res) => {
-    const { name, sku, category, quantity, price, alert_qty } = req.body;
+    const { name, sku, category, quantity, buying_price, selling_price, alert_qty } = req.body;
     const status = quantity === 0 ? 'Out of Stock' : quantity <= alert_qty ? 'Low Stock' : 'In Stock';
     try {
         const result = await db.run(
-            `INSERT INTO products (name, sku, category, quantity, price, status, alert_qty) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-            [name, sku, category, quantity, price, status, alert_qty]
+            `INSERT INTO products (name, sku, category, quantity, buying_price, selling_price, status, alert_qty) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [name, sku, category, quantity, buying_price || 0, selling_price || 0, status, alert_qty]
         );
         res.json({ id: result.lastID, message: 'Product added' });
     } catch (error) {
@@ -141,12 +142,12 @@ app.post('/api/products', async (req, res) => {
 });
 
 app.put('/api/products/:id', async (req, res) => {
-    const { name, sku, category, quantity, price, alert_qty } = req.body;
+    const { name, sku, category, quantity, buying_price, selling_price, alert_qty } = req.body;
     const status = quantity === 0 ? 'Out of Stock' : quantity <= alert_qty ? 'Low Stock' : 'In Stock';
     try {
         await db.run(
-            `UPDATE products SET name=$1, sku=$2, category=$3, quantity=$4, price=$5, status=$6, alert_qty=$7 WHERE id=$8`,
-            [name, sku, category, quantity, price, status, alert_qty, req.params.id]
+            `UPDATE products SET name=$1, sku=$2, category=$3, quantity=$4, buying_price=$5, selling_price=$6, status=$7, alert_qty=$8 WHERE id=$9`,
+            [name, sku, category, quantity, buying_price || 0, selling_price || 0, status, alert_qty, req.params.id]
         );
         res.json({ message: 'Product updated' });
     } catch (error) {
@@ -263,7 +264,6 @@ app.get('/api/stock-movements', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-// In server.js, update the stock-movements POST endpoint:
 app.post('/api/stock-movements', async (req, res) => {
     const { product_id, product_name, type, quantity, details } = req.body;
     try {
@@ -281,8 +281,8 @@ app.post('/api/stock-movements', async (req, res) => {
             [product_id, product_name, type, quantity, details, reason, isSale]
         );
 
-        // Get current product to check alert_qty and price
-        const product = await db.get("SELECT alert_qty, quantity, price FROM products WHERE id = $1", [product_id]);
+        // Get current product details
+        const product = await db.get("SELECT alert_qty, quantity, buying_price, selling_price FROM products WHERE id = $1", [product_id]);
         let newQuantity = product.quantity;
 
         if (type === 'IN') {
@@ -292,13 +292,15 @@ app.post('/api/stock-movements', async (req, res) => {
             newQuantity = product.quantity - quantity;
             await db.run(`UPDATE products SET quantity = $1 WHERE id = $2 AND quantity >= $1`, [newQuantity, product_id]);
 
-            // If this is a sale, record the profit
+            // If this is a sale, record the profit (selling_price - buying_price)
             if (isSale) {
-                const profit = quantity * product.price;
+                const unitProfit = (product.selling_price || 0) - (product.buying_price || 0);
+                const totalProfit = quantity * unitProfit;
+                const totalRevenue = quantity * (product.selling_price || 0);
                 await db.run(
-                    `INSERT INTO sales_profit (product_id, product_name, quantity, unit_price, total_profit, sale_date) 
-                     VALUES ($1, $2, $3, $4, $5, CURRENT_DATE)`,
-                    [product_id, product_name, quantity, product.price, profit]
+                    `INSERT INTO sales_profit (product_id, product_name, quantity, unit_cost, unit_price, unit_profit, total_revenue, total_profit, sale_date) 
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_DATE)`,
+                    [product_id, product_name, quantity, product.buying_price || 0, product.selling_price || 0, unitProfit, totalRevenue, totalProfit]
                 );
             }
         }
@@ -346,7 +348,7 @@ app.get('/api/most-sold-products', async (req, res) => {
 });
 
 // Add profit endpoint
-app.get('/api/sales-profit', async (req, res) => {
+app.get('/api/total-profit', async (req, res) => {
     const range = req.query.range || 'month';
     let dateCondition = '';
     switch (range) {
@@ -357,12 +359,59 @@ app.get('/api/sales-profit', async (req, res) => {
     }
     try {
         const result = await db.get(`
-            SELECT COALESCE(SUM(total_profit), 0) as total_profit,
-                   COALESCE(SUM(quantity), 0) as total_units_sold
+            SELECT 
+                COALESCE(SUM(total_revenue), 0) as total_revenue,
+                COALESCE(SUM(total_profit), 0) as total_profit,
+                COALESCE(SUM(quantity), 0) as total_units_sold
             FROM sales_profit 
             WHERE ${dateCondition}
         `, []);
-        res.json(result || { total_profit: 0, total_units_sold: 0 });
+        res.json(result || { total_revenue: 0, total_profit: 0, total_units_sold: 0 });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// All-time profit
+app.get('/api/all-time-profit', async (req, res) => {
+    try {
+        const result = await db.get(`
+            SELECT 
+                COALESCE(SUM(total_revenue), 0) as total_revenue,
+                COALESCE(SUM(total_profit), 0) as total_profit,
+                COALESCE(SUM(quantity), 0) as total_units_sold
+            FROM sales_profit
+        `, []);
+        res.json(result || { total_revenue: 0, total_profit: 0, total_units_sold: 0 });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Most profitable products (for horizontal bar chart)
+app.get('/api/most-profitable-products', async (req, res) => {
+    const range = req.query.range || 'month';
+    let dateCondition = '';
+    switch (range) {
+        case 'week': dateCondition = "sale_date >= CURRENT_DATE - INTERVAL '7 days'"; break;
+        case 'month': dateCondition = "sale_date >= CURRENT_DATE - INTERVAL '30 days'"; break;
+        case 'year': dateCondition = "sale_date >= CURRENT_DATE - INTERVAL '365 days'"; break;
+        default: dateCondition = "sale_date >= CURRENT_DATE - INTERVAL '30 days'";
+    }
+    try {
+        const rows = await db.all(`
+            SELECT 
+                product_name,
+                SUM(quantity) as total_sold,
+                SUM(total_revenue) as total_revenue,
+                SUM(total_profit) as total_profit
+            FROM sales_profit 
+            WHERE ${dateCondition}
+            GROUP BY product_name 
+            ORDER BY total_profit DESC 
+            LIMIT 10
+        `, []);
+        res.json(rows || []);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -425,7 +474,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
 
 app.get('/api/inventory-value', async (req, res) => {
     try {
-        const result = await db.get("SELECT COALESCE(SUM(quantity * price), 0) as total_value FROM products", []);
+        const result = await db.get("SELECT COALESCE(SUM(quantity * selling_price), 0) as total_value FROM products", []);
         res.json({ total_value: result?.total_value || 0 });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -547,11 +596,17 @@ app.get('/api/reports/monthly-stock-flow', async (req, res) => {
     try {
         const rows = await db.all(`
             SELECT 
-                TO_CHAR(date, 'YYYY-MM') as month,
-                SUM(CASE WHEN type = 'IN' THEN quantity ELSE 0 END) as stock_in,
-                SUM(CASE WHEN type = 'OUT' THEN quantity ELSE 0 END) as stock_out
-            FROM stock_movements
-            GROUP BY TO_CHAR(date, 'YYYY-MM')
+                TO_CHAR(sm.date, 'YYYY-MM') as month,
+                SUM(CASE WHEN sm.type = 'IN' THEN sm.quantity ELSE 0 END) as stock_in,
+                SUM(CASE WHEN sm.type = 'OUT' THEN sm.quantity ELSE 0 END) as stock_out,
+                COALESCE(sp.total_profit, 0) as profit
+            FROM stock_movements sm
+            LEFT JOIN (
+                SELECT TO_CHAR(sale_date, 'YYYY-MM') as month, SUM(total_profit) as total_profit
+                FROM sales_profit
+                GROUP BY TO_CHAR(sale_date, 'YYYY-MM')
+            ) sp ON TO_CHAR(sm.date, 'YYYY-MM') = sp.month
+            GROUP BY TO_CHAR(sm.date, 'YYYY-MM'), sp.total_profit
             ORDER BY month DESC
             LIMIT 12
         `, []);
@@ -567,7 +622,7 @@ app.get('/api/reports/valuation-by-category', async (req, res) => {
             SELECT 
                 category,
                 SUM(quantity) as total_units,
-                SUM(quantity * price) as estimated_value
+                SUM(quantity * selling_price) as estimated_value
             FROM products
             GROUP BY category
             ORDER BY estimated_value DESC

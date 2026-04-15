@@ -43,7 +43,7 @@
         <a href="categories.html"><i class="fas fa-tags"></i> Categories</a>
         <a href="stock.html"><i class="fas fa-exchange-alt"></i> Stock Ops</a>
         <a href="suppliers.html"><i class="fas fa-truck-loading"></i> Suppliers</a>
-        <a href="reports.html"><i class="fas fa-chart-pie"></i> Sales</a>
+        <a href="reports.html" class="active"><i class="fas fa-chart-pie"></i> Sales</a>
         <a href="prediction.html"><i class="fas fa-chart-scatter"></i> Predictions</a>
         <a href="alerts.html"><i class="fas fa-bell"></i> Alerts</a>
         <a href="users.html"><i class="fas fa-users-cog"></i> Users</a>
@@ -60,30 +60,31 @@
             <div
                 style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem;">
                 <h3 style="margin: 0; border: none; padding: 0;">Monthly Stock Flow</h3>
-                <button class="btn-outline" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">Import</button>
+                <button class="btn-outline" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;"
+                    onclick="exportToCSV('monthly')">Export</button>
             </div>
             <div style="overflow-x: auto;">
-                <table style="min-width: 400px;">
+                <table style="min-width: 600px;">
                     <thead>
                         <tr>
                             <th>Month</th>
                             <th>Stock In</th>
                             <th>Stock Out</th>
                             <th>Net Balance</th>
+                            <th>Profit</th>
                         </tr>
                     </thead>
-                    <tbody>
-                    </tbody>
+                    <tbody id="monthlyStockBody"></tbody>
                 </table>
             </div>
         </section>
 
-        <!-- Report 2: Valuation by Category -->
         <section class="box-section">
             <div
                 style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem;">
                 <h3 style="margin: 0; border: none; padding: 0;">Valuation by Category</h3>
-                <button class="btn-outline" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">Import</button>
+                <button class="btn-outline" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;"
+                    onclick="exportToCSV('valuation')">Export</button>
             </div>
             <div style="overflow-x: auto;">
                 <table style="min-width: 400px;">
@@ -94,69 +95,72 @@
                             <th>Estimated Value</th>
                         </tr>
                     </thead>
-                    <tbody>
-
-                    </tbody>
+                    <tbody id="valuationBody"></tbody>
                 </table>
             </div>
         </section>
-
-
     </main>
+
     <script>
         const API_URL = 'https://inventrack-backend-2wso.onrender.com/api';
+        let monthlyData = [];
+        let valuationData = [];
 
         async function loadMonthlyStockFlow() {
             try {
                 const response = await fetch(`${API_URL}/reports/monthly-stock-flow`);
-                const data = await response.json();
+                monthlyData = await response.json();
+                const tbody = document.getElementById('monthlyStockBody');
 
-                const tbody = document.querySelector('.box-section:first-child tbody');
-                if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No data available</td></tr>';
+                if (monthlyData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No data available</td></tr>';
                     return;
                 }
 
-                tbody.innerHTML = data.map(row => {
+                tbody.innerHTML = monthlyData.map(row => {
                     const net = (row.stock_in || 0) - (row.stock_out || 0);
+                    const profit = row.profit || 0;
                     return `
-            <tr>
-                <td>${row.month}</td>
-                <td style="color: #10b981;">+${row.stock_in || 0}</td>
-                <td style="color: #ef4444;">-${row.stock_out || 0}</td>
-                <td style="font-weight: 600; color: ${net >= 0 ? '#10b981' : '#ef4444'};">${net >= 0 ? '+' : ''}${net}</td>
-            </tr>
-            `;
+                        <tr>
+                            <td>${row.month}</td>
+                            <td style="color: #10b981;">+${row.stock_in || 0}</td>
+                            <td style="color: #ef4444;">-${row.stock_out || 0}</td>
+                            <td style="font-weight: 600; color: ${net >= 0 ? '#10b981' : '#ef4444'};">${net >= 0 ? '+' : ''}${net}</td>
+                            <td style="font-weight: 600; color: ${profit >= 0 ? '#10b981' : '#ef4444'};">${formatPrice(profit)}</td>
+                        </tr>
+                    `;
                 }).join('');
+
+                if (typeof applyGlobalSettings === 'function') applyGlobalSettings();
             } catch (error) {
                 console.error('Error loading stock flow:', error);
+                document.getElementById('monthlyStockBody').innerHTML = '<tr><td colspan="5" style="text-align:center; color:#ef4444;">Error loading data</td></tr>';
             }
         }
 
         async function loadValuationByCategory() {
             try {
                 const response = await fetch(`${API_URL}/reports/valuation-by-category`);
-                const data = await response.json();
+                valuationData = await response.json();
+                const tbody = document.getElementById('valuationBody');
 
-                const tbody = document.querySelector('.box-section:last-child tbody');
-                if (data.length === 0) {
+                if (valuationData.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No data available</td></tr>';
                     return;
                 }
 
-                tbody.innerHTML = data.map(row => `
-            <tr>
-                <td>${escapeHtml(row.category)}</td>
-                <td>${row.total_units || 0}</td>
-                <td>${formatPrice(row.estimated_value || 0)}</td>
-            </tr>
-            `).join('');
+                tbody.innerHTML = valuationData.map(row => `
+                    <tr>
+                        <td>${escapeHtml(row.category)}</td>
+                        <td>${row.total_units || 0}</td>
+                        <td data-price="${row.estimated_value || 0}">${formatPrice(row.estimated_value || 0)}</td>
+                    </tr>
+                `).join('');
 
-                if (typeof applyGlobalSettings === 'function') {
-                    applyGlobalSettings();
-                }
+                if (typeof applyGlobalSettings === 'function') applyGlobalSettings();
             } catch (error) {
                 console.error('Error loading valuation:', error);
+                document.getElementById('valuationBody').innerHTML = '<tr><td colspan="3" style="text-align:center; color:#ef4444;">Error loading data</td></tr>';
             }
         }
 
@@ -169,6 +173,28 @@
                 return m;
             });
         }
+
+        window.exportToCSV = function (type) {
+            let csv = '';
+            if (type === 'monthly' && monthlyData.length) {
+                csv = 'Month,Stock In,Stock Out,Net Balance,Profit\n';
+                csv += monthlyData.map(r => {
+                    const net = (r.stock_in || 0) - (r.stock_out || 0);
+                    return `${r.month},${r.stock_in || 0},${r.stock_out || 0},${net},${r.profit || 0}`;
+                }).join('\n');
+            } else if (type === 'valuation' && valuationData.length) {
+                csv = 'Category,Total Units,Estimated Value\n';
+                csv += valuationData.map(r => `${r.category},${r.total_units || 0},${r.estimated_value || 0}`).join('\n');
+            }
+            if (csv) {
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${type}_report.csv`;
+                a.click();
+            }
+        };
 
         loadMonthlyStockFlow();
         loadValuationByCategory();

@@ -66,7 +66,7 @@ async function initDatabase() {
         `);
         console.log('✅ Categories table ready');
 
-        // Products table
+        // In initDatabase() function, update the products table:
         await pool.query(`
             CREATE TABLE IF NOT EXISTS products (
                 id SERIAL PRIMARY KEY,
@@ -74,12 +74,16 @@ async function initDatabase() {
                 sku TEXT UNIQUE NOT NULL,
                 category TEXT NOT NULL,
                 quantity INTEGER DEFAULT 0,
-                price DECIMAL(10,2) NOT NULL,
+                buying_price DECIMAL(10,2) NOT NULL DEFAULT 0,
+                selling_price DECIMAL(10,2) NOT NULL DEFAULT 0,
                 status TEXT DEFAULT 'In Stock',
                 alert_qty INTEGER DEFAULT 10,
                 created_date DATE DEFAULT CURRENT_DATE
             )
         `);
+        await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS buying_price DECIMAL(10,2) DEFAULT 0`);
+        await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS selling_price DECIMAL(10,2) DEFAULT 0`);
+        await pool.query(`ALTER TABLE products RENAME COLUMN price TO selling_price`).catch(() => { });
         console.log('✅ Products table ready');
 
         // Suppliers table
@@ -130,18 +134,24 @@ async function initDatabase() {
     }
     // Sales profit table
     await pool.query(`
-    CREATE TABLE IF NOT EXISTS sales_profit (
-        id SERIAL PRIMARY KEY,
-        product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
-        product_name TEXT,
-        quantity INTEGER,
-        unit_price DECIMAL(10,2),
-        total_profit DECIMAL(10,2),
-        sale_date DATE DEFAULT CURRENT_DATE
-    )
-`);
+        CREATE TABLE IF NOT EXISTS sales_profit (
+            id SERIAL PRIMARY KEY,
+            product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
+            product_name TEXT,
+            quantity INTEGER,
+            unit_cost DECIMAL(10,2),
+            unit_price DECIMAL(10,2),
+            unit_profit DECIMAL(10,2),
+            total_revenue DECIMAL(10,2),
+            total_profit DECIMAL(10,2),
+            sale_date DATE DEFAULT CURRENT_DATE
+        )
+    `);
+    await pool.query(`ALTER TABLE sales_profit ADD COLUMN IF NOT EXISTS unit_cost DECIMAL(10,2) DEFAULT 0`);
+    await pool.query(`ALTER TABLE sales_profit ADD COLUMN IF NOT EXISTS unit_profit DECIMAL(10,2) DEFAULT 0`);
+    await pool.query(`ALTER TABLE sales_profit ADD COLUMN IF NOT EXISTS total_revenue DECIMAL(10,2) DEFAULT 0`);
     console.log('✅ Sales profit table ready');
-
+    
     // Update stock_movements table with new columns
     await pool.query(`
     ALTER TABLE stock_movements 

@@ -181,7 +181,8 @@
                             <th>SKU</th>
                             <th>Category</th>
                             <th>Quantity</th>
-                            <th>Price</th>
+                            <th>Buying</th>
+                            <th>Selling</th>
                             <th>Status</th>
                             <th>Created Date</th>
                             <th style="text-align: right;">Actions</th>
@@ -227,9 +228,15 @@
                         <input type="number" id="prodAlertQty" required min="1" placeholder="e.g. 10">
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>Price ($)</label>
-                    <input type="number" id="prodPrice" required min="0" step="0.01" placeholder="0.00">
+                <div class="form-group" style="display: flex; gap: 1rem;">
+                    <div style="flex: 1;">
+                        <label>Buying Price ($)</label>
+                        <input type="number" id="prodBuyingPrice" required min="0" step="0.01" placeholder="0.00">
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Selling Price ($)</label>
+                        <input type="number" id="prodSellingPrice" required min="0" step="0.01" placeholder="0.00">
+                    </div>
                 </div>
                 <button type="submit" class="btn-primary"
                     style="margin-top: 1rem; padding: 0.8rem; font-size: 1.1rem;">Save Product</button>
@@ -319,17 +326,18 @@
                 }
 
                 tr.innerHTML = `
-            <td style="font-weight: 600; color: #0f172a;">${escapeHtml(product.name)}</td>
-            <td style="color: #64748b;">${escapeHtml(product.sku)}</td>
-            <td>${escapeHtml(product.category)}</td>
-            <td>${product.quantity}</td>
-            <td data-price="${product.price}">${formatPrice(product.price)}</td>
-            <td style="font-weight: 600; color: ${getStatusColor(product.status)};">${product.status}</td>
-            <td data-date="${product.created_date}">${formatDate(product.created_date)}</td>
-            <td class="table-actions" style="text-align: right;">
-                ${actionsHtml}
-            </td>
-        `;
+                    <td style="font-weight: 600; color: #0f172a;">${escapeHtml(product.name)}</td>
+                    <td style="color: #64748b;">${escapeHtml(product.sku)}</td>
+                    <td>${escapeHtml(product.category)}</td>
+                    <td>${product.quantity}</td>
+                    <td data-price="${product.buying_price}">${formatPrice(product.buying_price)}</td>
+                    <td data-price="${product.selling_price}">${formatPrice(product.selling_price)}</td>
+                    <td style="font-weight: 600; color: ${getStatusColor(product.status)};">${product.status}</td>
+                    <td data-date="${product.created_date}">${formatDate(product.created_date)}</td>
+                    <td class="table-actions" style="text-align: right;">
+                        ${actionsHtml}
+                    </td>
+                `;
                 tableBody.appendChild(tr);
             });
         }
@@ -485,7 +493,8 @@
                 sku: document.getElementById('prodSKU').value.trim(),
                 category: document.getElementById('prodCategory').value,
                 quantity: parseInt(document.getElementById('prodQuantity').value) || 0,
-                price: parseFloat(document.getElementById('prodPrice').value) || 0,
+                buying_price: parseFloat(document.getElementById('prodBuyingPrice').value) || 0,
+                selling_price: parseFloat(document.getElementById('prodSellingPrice').value) || 0,
                 alert_qty: parseInt(document.getElementById('prodAlertQty').value) || 10
             };
 
@@ -535,14 +544,14 @@
             }
         };
 
-        // Edit product
         window.editProduct = (product) => {
             editingId = product.id;
             document.getElementById('prodName').value = product.name;
             document.getElementById('prodSKU').value = product.sku;
             document.getElementById('prodCategory').value = product.category;
             document.getElementById('prodQuantity').value = product.quantity;
-            document.getElementById('prodPrice').value = product.price;
+            document.getElementById('prodBuyingPrice').value = product.buying_price || 0;
+            document.getElementById('prodSellingPrice').value = product.selling_price || 0;
             document.getElementById('prodAlertQty').value = product.alert_qty || 10;
             document.querySelector('#addProductModal h2').innerText = "Edit Product";
             modal.classList.add('active');

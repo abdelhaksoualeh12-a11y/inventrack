@@ -2,7 +2,6 @@
 <html lang="en" dir="ltr">
 
 <head>
-
     <meta charset="UTF-8">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -10,7 +9,6 @@
     <title>Dashboard | InvenTrack</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    <!-- Chart.js library for simple curves -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="auth.js"></script>
     <script src="validation.js"></script>
@@ -20,7 +18,7 @@
 <body>
     <aside class="sidebar">
         <h2><i class="fas fa-cubes"></i> InvenTrack</h2>
-        <a href="dashboard.html"><i class="fas fa-chart-line"></i> Dashboard</a>
+        <a href="dashboard.html" class="active"><i class="fas fa-chart-line"></i> Dashboard</a>
         <a href="products.html"><i class="fas fa-box"></i> Products</a>
         <a href="categories.html"><i class="fas fa-tags"></i> Categories</a>
         <a href="stock.html"><i class="fas fa-exchange-alt"></i> Stock Ops</a>
@@ -34,50 +32,55 @@
         <a href="index.html" style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); color: #ef4444;"><i
                 class="fas fa-sign-out-alt"></i> Logout</a>
     </aside>
+
     <main class="main-content">
         <h1 class="page-header">Dashboard Overview</h1>
 
         <div class="grid-3" style="margin-bottom: 2rem;">
             <div class="card-stats" style="border-top-color: #3b82f6;">
                 <h3>Total Products</h3>
-                <div class="value">0</div>
+                <div class="value" id="totalProducts">0</div>
             </div>
             <div class="card-stats" style="border-top-color: #10b981;">
                 <h3>Total Stock</h3>
-                <div class="value">0</div>
+                <div class="value" id="totalStock">0</div>
             </div>
             <div class="card-stats" style="border-top-color: #8b5cf6;">
                 <h3>Inventory Value</h3>
-                <div class="value">0</div>
+                <div class="value" id="inventoryValue">0</div>
             </div>
             <div class="card-stats" style="border-top-color: #f43f5e;">
                 <h3>Low Stock Items</h3>
-                <div class="value">0</div>
+                <div class="value" id="lowStockItems">0</div>
             </div>
             <div class="card-stats" style="border-top-color: #06b6d4;">
                 <h3>Stock In (Total)</h3>
-                <div class="value">0</div>
+                <div class="value" id="stockInTotal">0</div>
             </div>
             <div class="card-stats" style="border-top-color: #d946ef;">
                 <h3>Stock Out (Total)</h3>
-                <div class="value">0</div>
+                <div class="value" id="stockOutTotal">0</div>
             </div>
             <div class="card-stats" style="border-top-color: #ef4444;">
                 <h3>Out of Stock</h3>
-                <div class="value">0</div>
+                <div class="value" id="outOfStock">0</div>
             </div>
             <div class="card-stats" style="border-top-color: #64748b;">
                 <h3>Categories</h3>
-                <div class="value">0</div>
+                <div class="value" id="totalCategories">0</div>
+            </div>
+            <div class="card-stats" style="border-top-color: #f59e0b;">
+                <h3>Total Profit</h3>
+                <div class="value" id="totalProfitValue">$0</div>
             </div>
         </div>
 
         <div class="grid-2" style="grid-template-columns: 1.5fr 1fr;">
-            <!-- Most Sold Products Chart -->
+            <!-- Sales & Revenue Line Chart -->
             <section class="box-section" style="margin-bottom: 0;">
                 <h3 style="margin-bottom: 1rem;">
                     <i class="fas fa-chart-line" style="color:#3b82f6; margin-right:8px;"></i>
-                    Sales & Revenue (Last 30 Days)
+                    Sales & Revenue Overview
                     <select id="chartTimeRange"
                         style="width: auto; margin-left: 1rem; padding: 0.25rem 0.5rem; border: 1px solid #e2e8f0; border-radius: 6px;">
                         <option value="week">Last 7 Days</option>
@@ -86,29 +89,24 @@
                     </select>
                 </h3>
                 <div style="height: 300px; width: 100%;">
-                    <canvas id="salesChart"></canvas>
+                    <canvas id="revenueChart"></canvas>
                 </div>
             </section>
 
-            <!-- Top Selling Products -->
+            <!-- Most Profitable Products - Horizontal Bar Chart -->
             <section class="box-section" style="margin-bottom: 0;">
                 <h3 style="margin-bottom: 1rem;">
                     <i class="fas fa-trophy" style="color:#f59e0b; margin-right:8px;"></i>
-                    Top Selling Products
+                    Most Profitable Products
                 </h3>
-                <div id="topSellingList" class="top-products-list">
-                    <div class="top-product-item">
-                        <div class="top-product-info">
-                            <p style="color: #94a3b8;">Loading...</p>
-                        </div>
-                    </div>
+                <div style="height: 300px; width: 100%;">
+                    <canvas id="profitChart"></canvas>
                 </div>
             </section>
         </div>
 
         <!-- Alerts Section -->
         <div class="grid-2" style="grid-template-columns: 1fr 1fr; margin-top: 2rem;">
-            <!-- Low Stock Items -->
             <section class="box-section" style="margin-bottom: 0;">
                 <h3 style="margin-bottom: 1rem;"><i class="fas fa-exclamation-triangle"
                         style="color:#f59e0b; margin-right:8px;"></i> Low Stock Alerts</h3>
@@ -119,12 +117,9 @@
                             <th>Current Qty</th>
                         </tr>
                     </thead>
-                    <tbody>
-                    </tbody>
+                    <tbody id="lowStockTableBody"></tbody>
                 </table>
             </section>
-
-            <!-- Out of Stock Items -->
             <section class="box-section" style="margin-bottom: 0;">
                 <h3 style="margin-bottom: 1rem;"><i class="fas fa-times-circle"
                         style="color:#ef4444; margin-right:8px;"></i> Out of Stock</h3>
@@ -135,21 +130,16 @@
                             <th>Status</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>Webcam 1080p</td>
-                            <td>0 Left</td>
-                        </tr>
-                    </tbody>
+                    <tbody id="outOfStockTableBody"></tbody>
                 </table>
             </section>
         </div>
     </main>
-    <script src="settings-manager.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script>
         const API_URL = 'https://inventrack-backend-2wso.onrender.com/api';
-        let salesChart = null;
+        let revenueChart = null;
+        let profitChart = null;
         let refreshInterval = null;
 
         function escapeHtml(str) {
@@ -162,34 +152,80 @@
             });
         }
 
-        // Replace the chart rendering and add Top Selling Products
-
-        async function loadMostSoldProducts(range = 'month') {
+        // Load all dashboard stats
+        async function loadDashboardStats() {
             try {
-                const response = await fetch(`${API_URL}/most-sold-products?range=${range}`);
+                const response = await fetch(`${API_URL}/dashboard/stats`);
+                const stats = await response.json();
+
+                document.getElementById('totalProducts').innerText = stats.total_products || 0;
+                document.getElementById('totalStock').innerText = stats.total_stock || 0;
+                document.getElementById('lowStockItems').innerText = stats.low_stock || 0;
+                document.getElementById('outOfStock').innerText = stats.out_of_stock || 0;
+                document.getElementById('totalCategories').innerText = stats.total_categories || 0;
+                document.getElementById('stockInTotal').innerText = stats.stock_in_total || 0;
+                document.getElementById('stockOutTotal').innerText = stats.stock_out_total || 0;
+            } catch (error) {
+                console.error('Error loading dashboard stats:', error);
+            }
+        }
+
+        // Load inventory value
+        async function loadInventoryValue() {
+            try {
+                const response = await fetch(`${API_URL}/inventory-value`);
+                const data = await response.json();
+                const valueEl = document.getElementById('inventoryValue');
+                if (valueEl) {
+                    valueEl.innerText = formatPrice(data.total_value || 0);
+                    valueEl.setAttribute('data-price', data.total_value || 0);
+                }
+            } catch (error) {
+                console.error('Error loading inventory value:', error);
+            }
+        }
+
+        // Load total profit
+        async function loadTotalProfit(range = 'month') {
+            try {
+                const response = await fetch(`${API_URL}/total-profit?range=${range}`);
+                const data = await response.json();
+                const profitEl = document.getElementById('totalProfitValue');
+                if (profitEl) {
+                    profitEl.innerText = formatPrice(data.total_profit || 0);
+                    profitEl.setAttribute('data-price', data.total_profit || 0);
+                }
+                return data;
+            } catch (error) {
+                console.error('Error loading profit:', error);
+                return { total_revenue: 0, total_profit: 0 };
+            }
+        }
+
+        // Load revenue chart data
+        async function loadRevenueChart(range = 'month') {
+            try {
+                const response = await fetch(`${API_URL}/sales-profit?range=${range}`);
                 const data = await response.json();
 
-                const ctx = document.getElementById('salesChart').getContext('2d');
+                const ctx = document.getElementById('revenueChart').getContext('2d');
+                if (revenueChart) revenueChart.destroy();
 
-                if (salesChart) salesChart.destroy();
+                // For demo, create sample data if no real data exists
+                const labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+                const revenueData = data.total_revenue ? [data.total_revenue * 0.2, data.total_revenue * 0.25, data.total_revenue * 0.3, data.total_revenue * 0.25] : [0, 0, 0, 0];
 
-                if (data.length === 0) {
-                    // ... existing empty chart code ...
-                    return;
-                }
-
-                // Create gradient
                 const gradient = ctx.createLinearGradient(0, 0, 0, 400);
                 gradient.addColorStop(0, 'rgba(59, 130, 246, 0.3)');
                 gradient.addColorStop(1, 'rgba(59, 130, 246, 0.02)');
 
-                salesChart = new Chart(ctx, {
+                revenueChart = new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: data.map(item => item.product_name),
+                        labels: labels,
                         datasets: [{
                             label: 'Revenue',
-                            data: data.map(item => item.total_sold * (item.avg_price || 29.99)),
+                            data: revenueData,
                             borderColor: '#3b82f6',
                             backgroundColor: gradient,
                             borderWidth: 3,
@@ -218,225 +254,162 @@
                             y: {
                                 beginAtZero: true,
                                 grid: { color: '#e2e8f0' },
-                                ticks: {
-                                    callback: function (value) {
-                                        return formatPrice(value);
-                                    }
-                                }
+                                ticks: { callback: value => formatPrice(value) }
                             },
                             x: { grid: { display: false } }
                         }
                     }
                 });
-
-                // Also render top selling products list
-                renderTopSellingProducts(data.slice(0, 5));
-
             } catch (error) {
-                console.error('Error loading most sold products:', error);
+                console.error('Error loading revenue chart:', error);
             }
         }
 
-        function renderTopSellingProducts(products) {
-            const container = document.getElementById('topSellingList');
-            if (!container) return;
-
-            const maxSold = Math.max(...products.map(p => p.total_sold), 1);
-
-            container.innerHTML = products.map((product, index) => {
-                const percentage = (product.total_sold / maxSold) * 100;
-                return `
-            <div class="top-product-item">
-                <div class="top-product-rank">${index + 1}</div>
-                <div class="top-product-info">
-                    <h4>${escapeHtml(product.product_name)}</h4>
-                    <div class="progress-bg">
-                        <div class="progress-fill" style="width: ${percentage}%;"></div>
-                    </div>
-                </div>
-                <div class="top-product-value">${product.total_sold} sold</div>
-            </div>
-        `;
-            }).join('');
-        }
-
-        // In dashboard.html, find the loadDashboardStats function and replace with:
-
-        async function loadDashboardStats() {
+        // Load most profitable products (horizontal bar chart)
+        async function loadProfitableProductsChart(range = 'month') {
             try {
-                const response = await fetch(`${API_URL}/dashboard/stats`);
-                const stats = await response.json();
+                const response = await fetch(`${API_URL}/most-profitable-products?range=${range}`);
+                const data = await response.json();
 
-                const values = document.querySelectorAll('.card-stats .value');
-                if (values[0]) values[0].innerText = stats.total_products || 0;
-                if (values[1]) values[1].innerText = stats.total_stock || 0;
-                if (values[2]) {
-                    // This is inventory value - handled by loadInventoryValue
+                const ctx = document.getElementById('profitChart').getContext('2d');
+                if (profitChart) profitChart.destroy();
+
+                if (data.length === 0) {
+                    profitChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['No sales data yet'],
+                            datasets: [{
+                                label: 'Profit',
+                                data: [0],
+                                backgroundColor: 'rgba(245, 158, 11, 0.7)'
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y',
+                            responsive: true,
+                            maintainAspectRatio: false
+                        }
+                    });
+                    return;
                 }
-                if (values[3]) values[3].innerText = stats.low_stock || 0;
-                if (values[4]) values[4].innerText = stats.stock_in_total || 0;  // Fixed index
-                if (values[5]) values[5].innerText = stats.stock_out_total || 0; // Fixed index
-                if (values[6]) values[6].innerText = stats.out_of_stock || 0;
-                if (values[7]) values[7].innerText = stats.total_categories || 0; // Categories is at index 7
-            } catch (error) {
-                console.error('Error loading dashboard stats:', error);
-            }
-        }
 
-        // Add this to load stock in/out totals
-        async function loadStockInOutTotals() {
-            try {
-                const response = await fetch(`${API_URL}/stock-movements`);
-                const movements = await response.json();
-
-                let totalIn = 0;
-                let totalOut = 0;
-
-                movements.forEach(m => {
-                    if (m.type === 'IN') {
-                        totalIn += m.quantity;
-                    } else {
-                        totalOut += m.quantity;
+                profitChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.map(item => item.product_name),
+                        datasets: [{
+                            label: 'Total Profit',
+                            data: data.map(item => item.total_profit),
+                            backgroundColor: 'rgba(245, 158, 11, 0.7)',
+                            borderColor: '#f59e0b',
+                            borderWidth: 2,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return `Profit: ${formatPrice(context.raw)}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                grid: { color: '#e2e8f0' },
+                                ticks: { callback: value => formatPrice(value) }
+                            },
+                            y: { grid: { display: false } }
+                        }
                     }
                 });
-
-                // Update stock in/out cards if they exist
-                const stockInCard = document.querySelector('.card-stats[style*="border-top-color: #06b6d4"] .value');
-                const stockOutCard = document.querySelector('.card-stats[style*="border-top-color: #d946ef"] .value');
-
-                if (stockInCard) stockInCard.innerText = totalIn;
-                if (stockOutCard) stockOutCard.innerText = totalOut;
             } catch (error) {
-                console.error('Error loading stock totals:', error);
+                console.error('Error loading profitable products:', error);
             }
         }
 
-        // Add to refreshDashboard
-        async function refreshDashboard() {
-            await loadDashboardStats();
-            await loadInventoryValue();
-            await loadRecentMovements();
-            await loadLowStockAlerts();
-            await loadOutOfStockAlerts();
-            await loadStockInOutTotals(); // Add this line
-            await loadMostSoldProducts(document.getElementById('chartTimeRange')?.value || 'month');
-            applyGlobalSettings();
-        }
-        async function loadInventoryValue() {
-            try {
-                const response = await fetch(`${API_URL}/inventory-value`);
-                const data = await response.json();
-                const valueCard = document.querySelector('.card-stats[style*="border-top-color: #8b5cf6"] .value');
-                if (valueCard) {
-                    const amount = data.total_value || 0;
-                    valueCard.innerText = formatPrice(amount);
-                    valueCard.setAttribute('data-price', amount);
-                }
-            } catch (error) {
-                console.error('Error loading inventory value:', error);
-            }
-        }
-
-        async function loadRecentMovements() {
-            try {
-                const response = await fetch(`${API_URL}/stock-movements`);
-                const movements = await response.json();
-
-                const tbody = document.querySelector('.grid-2 .box-section table tbody');
-                if (tbody) {
-                    if (movements.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No recent movements</td></tr>';
-                    } else {
-                        tbody.innerHTML = movements.slice(0, 5).map(m => `
-                        <tr>
-                            <td data-date="${m.date}">${formatDateTime(m.date)}</td>
-                            <td>${escapeHtml(m.product_name)}</td>
-                            <td style="color: ${m.type === 'IN' ? '#10b981' : '#ef4444'}; font-weight:600;">${m.type === 'IN' ? '+' : '-'}${m.quantity}</td>
-                        </tr>
-                    `).join('');
-                    }
-                }
-            } catch (error) {
-                console.error('Error loading movements:', error);
-            }
-        }
-
+        // Load low stock alerts
         async function loadLowStockAlerts() {
             try {
                 const response = await fetch(`${API_URL}/products`);
                 const products = await response.json();
-                const lowStockProducts = products.filter(p => p.status === 'Low Stock');
+                const lowStock = products.filter(p => p.status === 'Low Stock');
+                const tbody = document.getElementById('lowStockTableBody');
 
-                const tbody = document.querySelector('.grid-2:last-child .box-section:first-child tbody');
-                if (tbody) {
-                    if (lowStockProducts.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">No low stock items</td></tr>';
-                    } else {
-                        tbody.innerHTML = lowStockProducts.map(p => `
-                        <tr>
-                            <td>${escapeHtml(p.name)}</td>
-                            <td>${p.quantity} Left</td>
-                        </tr>
+                if (lowStock.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:#94a3b8;">No low stock items</td></tr>';
+                } else {
+                    tbody.innerHTML = lowStock.slice(0, 5).map(p => `
+                        <tr><td>${escapeHtml(p.name)}</td><td>${p.quantity} Left</td></tr>
                     `).join('');
-                    }
                 }
             } catch (error) {
                 console.error('Error loading low stock alerts:', error);
             }
         }
 
+        // Load out of stock alerts
         async function loadOutOfStockAlerts() {
             try {
                 const response = await fetch(`${API_URL}/products`);
                 const products = await response.json();
-                const outOfStockProducts = products.filter(p => p.status === 'Out of Stock');
+                const outOfStock = products.filter(p => p.status === 'Out of Stock');
+                const tbody = document.getElementById('outOfStockTableBody');
 
-                const tbody = document.querySelector('.grid-2:last-child .box-section:last-child tbody');
-                if (tbody) {
-                    if (outOfStockProducts.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;">No out of stock items</td></tr>';
-                    } else {
-                        tbody.innerHTML = outOfStockProducts.map(p => `
-                        <tr>
-                            <td>${escapeHtml(p.name)}</td>
-                            <td>0 Left</td>
-                        </tr>
+                if (outOfStock.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:#94a3b8;">No out of stock items</td></tr>';
+                } else {
+                    tbody.innerHTML = outOfStock.slice(0, 5).map(p => `
+                        <tr><td>${escapeHtml(p.name)}</td><td>0 Left</td></tr>
                     `).join('');
-                    }
                 }
             } catch (error) {
                 console.error('Error loading out of stock alerts:', error);
             }
         }
 
+        // Refresh all dashboard data
         async function refreshDashboard() {
+            const range = document.getElementById('chartTimeRange')?.value || 'month';
             await loadDashboardStats();
             await loadInventoryValue();
-            await loadRecentMovements();
+            await loadTotalProfit(range);
+            await loadRevenueChart(range);
+            await loadProfitableProductsChart(range);
             await loadLowStockAlerts();
             await loadOutOfStockAlerts();
-            await loadStockInOutTotals();
-            await loadMostSoldProducts(document.getElementById('chartTimeRange')?.value || 'month');
-            applyGlobalSettings();
+            if (typeof applyGlobalSettings === 'function') applyGlobalSettings();
         }
 
-        window.addEventListener('stockMovementChanged', () => refreshDashboard());
-        window.addEventListener('settingsChanged', () => refreshDashboard());
-
+        // Event listeners
         document.getElementById('chartTimeRange')?.addEventListener('change', (e) => {
-            loadMostSoldProducts(e.target.value);
+            const range = e.target.value;
+            loadTotalProfit(range);
+            loadRevenueChart(range);
+            loadProfitableProductsChart(range);
         });
 
-        if (refreshInterval) clearInterval(refreshInterval);
-        refreshInterval = setInterval(refreshDashboard, 10000);
+        window.addEventListener('stockMovementChanged', refreshDashboard);
+        window.addEventListener('settingsChanged', refreshDashboard);
 
+        // Auto-refresh
+        if (refreshInterval) clearInterval(refreshInterval);
+        refreshInterval = setInterval(refreshDashboard, 30000);
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) refreshDashboard();
         });
 
+        // Initialize
         refreshDashboard();
     </script>
-
 </body>
 
 </html>

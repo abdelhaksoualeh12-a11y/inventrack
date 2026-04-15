@@ -367,6 +367,20 @@
             <div class="chart-container">
                 <canvas id="mainPredictionChart"></canvas>
             </div>
+            <div class="prediction-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="forecastAccuracy">--%</div>
+                    <div class="stat-label">Forecast Accuracy</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="predictedDemand">--</div>
+                    <div class="stat-label">Predicted Demand (30d)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="predictedProfit">--</div>
+                    <div class="stat-label">Predicted Profit (30d)</div>
+                </div>
+            </div>
         </div>
 
         <!-- Two Column Layout -->
@@ -573,11 +587,14 @@
                     daysUntilStockout: daysUntilStockout,
                     suggestedOrder: suggestedOrder,
                     confidence: confidence,
-                    trend: calculateTrend(dailySales)
+                    trend: calculateTrend(dailySales),
+                    unitProfit: (product.selling_price || 0) - (product.buying_price || 0),
+                    predictedProfit: weeklyDemand * ((product.selling_price || 0) - (product.buying_price || 0)) * 4
                 };
             });
 
-            // Update UI
+            const totalPredictedProfit = Object.values(predictions).reduce((sum, p) => sum + (p.predictedProfit || 0), 0);
+            document.getElementById('predictedProfit').textContent = formatPrice(totalPredictedProfit);
             renderMainPrediction();
             renderRestockTable();
         }
