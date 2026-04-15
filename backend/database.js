@@ -128,6 +128,27 @@ async function initDatabase() {
     } catch (err) {
         console.error('Database initialization error:', err);
     }
+    // Sales profit table
+    await pool.query(`
+    CREATE TABLE IF NOT EXISTS sales_profit (
+        id SERIAL PRIMARY KEY,
+        product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
+        product_name TEXT,
+        quantity INTEGER,
+        unit_price DECIMAL(10,2),
+        total_profit DECIMAL(10,2),
+        sale_date DATE DEFAULT CURRENT_DATE
+    )
+`);
+    console.log('✅ Sales profit table ready');
+
+    // Update stock_movements table with new columns
+    await pool.query(`
+    ALTER TABLE stock_movements 
+    ADD COLUMN IF NOT EXISTS reason TEXT,
+    ADD COLUMN IF NOT EXISTS is_sale BOOLEAN DEFAULT false
+`);
+    console.log('✅ Stock movements table updated');
 }
 
 initDatabase();

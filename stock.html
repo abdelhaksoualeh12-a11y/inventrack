@@ -12,7 +12,7 @@
     <script src="settings-manager.js"></script>
     <style>
         /* Enhanced Responsive Design */
-        
+
         /* Main Content */
         .main-content {
             background: #f8fafc;
@@ -103,6 +103,7 @@
                 opacity: 0;
                 transform: translateY(10px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -432,7 +433,8 @@
     </aside>
 
     <main class="main-content">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
             <h1 class="page-header" style="margin-bottom: 0; border: none; padding: 0;">Stock Management</h1>
             <span id="userNameDisplay" style="color: #64748b; font-size: 0.9rem;"></span>
         </div>
@@ -468,7 +470,9 @@
                         </div>
                         <div class="form-group">
                             <label>Supplier <span style="font-weight: normal; color: #94a3b8;">(Optional)</span></label>
-                            <input type="text" id="stockInSupplier" placeholder="e.g. Dell Distributor LLC">
+                            <select id="stockInSupplier">
+                                <option value="">-- Select Supplier (Optional) --</option>
+                            </select>
                         </div>
                         <button type="submit" class="submit-btn in" id="stockInSubmitBtn">
                             <i class="fas fa-plus-circle"></i> Record Stock In
@@ -543,7 +547,7 @@
         const historyBody = document.getElementById('historyTableBody');
         const userRole = localStorage.getItem('userRole');
         const userName = localStorage.getItem('userName');
-        
+
         // Display user name
         const userNameDisplay = document.getElementById('userNameDisplay');
         if (userNameDisplay && userName) {
@@ -561,11 +565,11 @@
                         input.disabled = true;
                     });
                 });
-                
+
                 // Hide the clear history button
                 const clearBtn = document.getElementById('clearHistoryBtn');
                 if (clearBtn) clearBtn.style.display = 'none';
-                
+
                 // Add visual indicator
                 const card = document.getElementById('stockOperationsCard');
                 if (card) {
@@ -579,7 +583,7 @@
         }
 
         // ============ TAB SWITCHING ============
-        window.switchTab = function(tab) {
+        window.switchTab = function (tab) {
             const formSectionIn = document.getElementById('formSectionIn');
             const formSectionOut = document.getElementById('formSectionOut');
             const tabInBtn = document.getElementById('tabInBtn');
@@ -636,7 +640,7 @@
                     `;
                     historyBody.appendChild(tr);
                 });
-                
+
                 // Apply global settings formatting if available
                 if (typeof applyGlobalSettings === 'function') {
                     applyGlobalSettings();
@@ -648,10 +652,12 @@
         }
 
         // ============ LOAD PRODUCTS FOR DROPDOWNS ============
-        async function loadProductsForDropdowns() {
+        // ============ LOAD PRODUCTS AND SUPPLIERS FOR DROPDOWNS ============
+        async function loadProductsAndSuppliersForDropdowns() {
             try {
-                const response = await fetch(`${API_URL}/products`);
-                const products = await response.json();
+                // Load products
+                const productsResponse = await fetch(`${API_URL}/products`);
+                const products = await productsResponse.json();
 
                 // Update Stock In product dropdown
                 const stockInSelect = document.getElementById('stockInProduct');
@@ -682,8 +688,25 @@
                     });
                     if (currentValue) stockOutSelect.value = currentValue;
                 }
+
+                // Load suppliers for dropdown
+                const suppliersResponse = await fetch(`${API_URL}/suppliers`);
+                const suppliers = await suppliersResponse.json();
+
+                const supplierSelect = document.getElementById('stockInSupplier');
+                if (supplierSelect) {
+                    const currentValue = supplierSelect.value;
+                    supplierSelect.innerHTML = '<option value="">-- Select Supplier (Optional) --</option>';
+                    suppliers.filter(s => s.status === 'Active').forEach(supplier => {
+                        const option = document.createElement('option');
+                        option.value = supplier.name;
+                        option.textContent = supplier.name;
+                        supplierSelect.appendChild(option);
+                    });
+                    if (currentValue) supplierSelect.value = currentValue;
+                }
             } catch (error) {
-                console.error('Error loading products:', error);
+                console.error('Error loading data:', error);
             }
         }
 
@@ -692,7 +715,7 @@
         if (stockInForm) {
             stockInForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                
+
                 if (userRole === 'Staff') {
                     alert('⛔ Staff members cannot perform stock operations.');
                     return;
@@ -748,7 +771,7 @@
         if (stockOutForm) {
             stockOutForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                
+
                 if (userRole === 'Staff') {
                     alert('⛔ Staff members cannot perform stock operations.');
                     return;
@@ -816,7 +839,7 @@
                     alert('⛔ Staff members cannot clear history.');
                     return;
                 }
-                
+
                 if (confirm('⚠️ WARNING: This will permanently delete ALL stock movement records from the database!\n\nThis action cannot be undone. Are you sure?')) {
                     try {
                         const response = await fetch(`${API_URL}/stock-movements/clear-all`, {

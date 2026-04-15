@@ -263,18 +263,26 @@ app.get('/api/stock-movements', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-
-// ============ STOCK MOVEMENTS ============
+// In server.js, update the stock-movements POST endpoint:
 app.post('/api/stock-movements', async (req, res) => {
     const { product_id, product_name, type, quantity, details } = req.body;
     try {
+        let reason = null;
+        let isSale = false;
+        if (type === 'OUT' && details) {
+            const reasonMatch = details.match(/Reason: (.+)/);
+            reason = reasonMatch ? reasonMatch[1] : null;
+            isSale = reason === 'Sale';
+        }
+
         const result = await db.run(
-            `INSERT INTO stock_movements (product_id, product_name, type, quantity, details) VALUES ($1, $2, $3, $4, $5)`,
-            [product_id, product_name, type, quantity, details]
+            `INSERT INTO stock_movements (product_id, product_name, type, quantity, details, reason, is_sale) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [product_id, product_name, type, quantity, details, reason, isSale]
         );
 
-        // Get current product to check alert_qty
-        const product = await db.get("SELECT alert_qty, quantity FROM products WHERE id = $1", [product_id]);
+        // Get current product to check alert_qty and price
+        const product = await db.get("SELECT alert_qty, quantity, price FROM products WHERE id = $1", [product_id]);
         let newQuantity = product.quantity;
 
         if (type === 'IN') {
@@ -283,6 +291,16 @@ app.post('/api/stock-movements', async (req, res) => {
         } else {
             newQuantity = product.quantity - quantity;
             await db.run(`UPDATE products SET quantity = $1 WHERE id = $2 AND quantity >= $1`, [newQuantity, product_id]);
+
+            // If this is a sale, record the profit
+            if (isSale) {
+                const profit = quantity * product.price;
+                await db.run(
+                    `INSERT INTO sales_profit (product_id, product_name, quantity, unit_price, total_profit, sale_date) 
+                     VALUES ($1, $2, $3, $4, $5, CURRENT_DATE)`,
+                    [product_id, product_name, quantity, product.price, profit]
+                );
+            }
         }
 
         // Update status based on new quantity
@@ -298,6 +316,54 @@ app.post('/api/stock-movements', async (req, res) => {
         res.json({ id: result.lastID, message: 'Stock movement recorded', newQuantity, newStatus });
     } catch (error) {
         console.error('Stock movement error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Update the most-sold-products endpoint to only count sales:
+app.get('/api/most-sold-products', async (req, res) => {
+    const range = req.query.range || 'month';
+    let dateCondition = '';
+    switch (range) {
+        case 'week': dateCondition = "date >= CURRENT_DATE - INTERVAL '7 days'"; break;
+        case 'month': dateCondition = "date >= CURRENT_DATE - INTERVAL '30 days'"; break;
+        case 'year': dateCondition = "date >= CURRENT_DATE - INTERVAL '365 days'"; break;
+        default: dateCondition = "date >= CURRENT_DATE - INTERVAL '30 days'";
+    }
+    try {
+        const rows = await db.all(`
+            SELECT product_name, SUM(quantity) as total_sold 
+            FROM stock_movements 
+            WHERE type = 'OUT' AND is_sale = true AND ${dateCondition}
+            GROUP BY product_name 
+            ORDER BY total_sold DESC 
+            LIMIT 10
+        `, []);
+        res.json(rows || []);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Add profit endpoint
+app.get('/api/sales-profit', async (req, res) => {
+    const range = req.query.range || 'month';
+    let dateCondition = '';
+    switch (range) {
+        case 'week': dateCondition = "sale_date >= CURRENT_DATE - INTERVAL '7 days'"; break;
+        case 'month': dateCondition = "sale_date >= CURRENT_DATE - INTERVAL '30 days'"; break;
+        case 'year': dateCondition = "sale_date >= CURRENT_DATE - INTERVAL '365 days'"; break;
+        default: dateCondition = "sale_date >= CURRENT_DATE - INTERVAL '30 days'";
+    }
+    try {
+        const result = await db.get(`
+            SELECT COALESCE(SUM(total_profit), 0) as total_profit,
+                   COALESCE(SUM(quantity), 0) as total_units_sold
+            FROM sales_profit 
+            WHERE ${dateCondition}
+        `, []);
+        res.json(result || { total_profit: 0, total_units_sold: 0 });
+    } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
@@ -338,12 +404,19 @@ app.get('/api/dashboard/stats', async (req, res) => {
         const categoryStats = await db.get("SELECT COUNT(*) as total_categories FROM categories", []);
         const lowStockStats = await db.get("SELECT COUNT(*) as low_stock FROM products WHERE status = 'Low Stock'", []);
         const outOfStockStats = await db.get("SELECT COUNT(*) as out_of_stock FROM products WHERE status = 'Out of Stock'", []);
+
+        // Get stock in/out totals
+        const stockInStats = await db.get("SELECT COALESCE(SUM(quantity), 0) as stock_in_total FROM stock_movements WHERE type = 'IN'", []);
+        const stockOutStats = await db.get("SELECT COALESCE(SUM(quantity), 0) as stock_out_total FROM stock_movements WHERE type = 'OUT'", []);
+
         res.json({
-            total_products: productStats?.total_products || 0,
-            total_stock: productStats?.total_stock || 0,
-            total_categories: categoryStats?.total_categories || 0,
-            low_stock: lowStockStats?.low_stock || 0,
-            out_of_stock: outOfStockStats?.out_of_stock || 0
+            total_products: parseInt(productStats?.total_products) || 0,
+            total_stock: parseInt(productStats?.total_stock) || 0,
+            total_categories: parseInt(categoryStats?.total_categories) || 0,
+            low_stock: parseInt(lowStockStats?.low_stock) || 0,
+            out_of_stock: parseInt(outOfStockStats?.out_of_stock) || 0,
+            stock_in_total: parseInt(stockInStats?.stock_in_total) || 0,
+            stock_out_total: parseInt(stockOutStats?.stock_out_total) || 0
         });
     } catch (error) {
         res.status(500).json({ error: error.message });

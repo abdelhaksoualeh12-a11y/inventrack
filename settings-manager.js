@@ -18,6 +18,9 @@ const currencies = {
     DZD: { symbol: 'دج', name: 'Algerian Dinar', rate: 132.16 }
 };
 
+// Store original USD values for conversion
+let originalPrices = new Map();
+
 // Add conversion function
 function convertCurrency(amount, fromCurrency, toCurrency) {
     const fromRate = currencies[fromCurrency]?.rate || 1;
@@ -36,8 +39,45 @@ function getSettings() {
 
 // Save settings
 function saveSettings(settings) {
+    const oldSettings = getSettings();
     localStorage.setItem('appSettings', JSON.stringify(settings));
+    
+    // Convert all prices if currency changed
+    if (oldSettings.currency !== settings.currency) {
+        convertAllPrices(oldSettings.currency, settings.currency);
+    }
+    
     window.dispatchEvent(new CustomEvent('settingsChanged', { detail: settings }));
+}
+
+// Convert all price displays when currency changes
+function convertAllPrices(fromCurrency, toCurrency) {
+    document.querySelectorAll('[data-price]').forEach(el => {
+        const originalAmount = parseFloat(el.dataset.originalPrice || el.dataset.price);
+        if (!isNaN(originalAmount)) {
+            // Store original USD price if not already stored
+            if (!el.dataset.originalPrice) {
+                el.dataset.originalPrice = originalAmount;
+            }
+            const convertedAmount = convertCurrency(parseFloat(el.dataset.originalPrice), 'USD', toCurrency);
+            el.dataset.price = convertedAmount;
+            el.innerText = formatPrice(convertedAmount);
+        }
+    });
+    
+    // Update inventory value card
+    const valueCard = document.querySelector('.card-stats[style*="border-top-color: #8b5cf6"] .value');
+    if (valueCard) {
+        const originalAmount = parseFloat(valueCard.dataset.originalPrice || valueCard.dataset.price);
+        if (!isNaN(originalAmount)) {
+            if (!valueCard.dataset.originalPrice) {
+                valueCard.dataset.originalPrice = originalAmount;
+            }
+            const convertedAmount = convertCurrency(parseFloat(valueCard.dataset.originalPrice), 'USD', toCurrency);
+            valueCard.dataset.price = convertedAmount;
+            valueCard.innerText = formatPrice(convertedAmount);
+        }
+    }
 }
 
 // Format price according to settings
@@ -109,17 +149,34 @@ function formatDateOnly(dateStr, format = null) {
 
 // Update all price displays on the page
 function updateAllPriceDisplays() {
+    const settings = getSettings();
+    
     document.querySelectorAll('[data-price]').forEach(el => {
-        const amount = parseFloat(el.dataset.price);
+        let amount = parseFloat(el.dataset.price);
         if (!isNaN(amount)) {
+            // Store original USD price
+            if (!el.dataset.originalPrice) {
+                el.dataset.originalPrice = amount;
+            }
+            // Convert from USD to selected currency
+            amount = convertCurrency(parseFloat(el.dataset.originalPrice), 'USD', settings.currency);
+            el.dataset.price = amount;
             el.innerText = formatPrice(amount);
         }
     });
 
     // Also update inventory value card
     const valueCard = document.querySelector('.card-stats[style*="border-top-color: #8b5cf6"] .value');
-    if (valueCard && valueCard.dataset.price) {
-        valueCard.innerText = formatPrice(parseFloat(valueCard.dataset.price));
+    if (valueCard) {
+        let amount = parseFloat(valueCard.dataset.price);
+        if (!isNaN(amount)) {
+            if (!valueCard.dataset.originalPrice) {
+                valueCard.dataset.originalPrice = amount;
+            }
+            amount = convertCurrency(parseFloat(valueCard.dataset.originalPrice), 'USD', settings.currency);
+            valueCard.dataset.price = amount;
+            valueCard.innerText = formatPrice(amount);
+        }
     }
 }
 

@@ -227,6 +227,8 @@
             }
         }
 
+        // In dashboard.html, find the loadDashboardStats function and replace with:
+
         async function loadDashboardStats() {
             try {
                 const response = await fetch(`${API_URL}/dashboard/stats`);
@@ -239,8 +241,10 @@
                     // This is inventory value - handled by loadInventoryValue
                 }
                 if (values[3]) values[3].innerText = stats.low_stock || 0;
-                if (values[4]) values[4].innerText = stats.out_of_stock || 0;
-                if (values[5]) values[5].innerText = stats.total_categories || 0;
+                if (values[4]) values[4].innerText = stats.stock_in_total || 0;  // Fixed index
+                if (values[5]) values[5].innerText = stats.stock_out_total || 0; // Fixed index
+                if (values[6]) values[6].innerText = stats.out_of_stock || 0;
+                if (values[7]) values[7].innerText = stats.total_categories || 0; // Categories is at index 7
             } catch (error) {
                 console.error('Error loading dashboard stats:', error);
             }
