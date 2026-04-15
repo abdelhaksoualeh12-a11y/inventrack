@@ -203,17 +203,35 @@
         }
 
         // Load revenue chart data
+        // Load revenue chart data
         async function loadRevenueChart(range = 'month') {
             try {
-                const response = await fetch(`${API_URL}/sales-profit?range=${range}`);
-                const data = await response.json();
+                // Get sales profit data
+                const profitResponse = await fetch(`${API_URL}/total-profit?range=${range}`);
+                const profitData = await profitResponse.json();
+
+                // Get most profitable products for the chart
+                const productsResponse = await fetch(`${API_URL}/most-profitable-products?range=${range}`);
+                const productsData = await productsResponse.json();
 
                 const ctx = document.getElementById('revenueChart').getContext('2d');
                 if (revenueChart) revenueChart.destroy();
 
-                // For demo, create sample data if no real data exists
-                const labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
-                const revenueData = data.total_revenue ? [data.total_revenue * 0.2, data.total_revenue * 0.25, data.total_revenue * 0.3, data.total_revenue * 0.25] : [0, 0, 0, 0];
+                if (productsData.length === 0) {
+                    revenueChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: ['No data'],
+                            datasets: [{
+                                label: 'Revenue',
+                                data: [0],
+                                borderColor: '#3b82f6'
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false }
+                    });
+                    return;
+                }
 
                 const gradient = ctx.createLinearGradient(0, 0, 0, 400);
                 gradient.addColorStop(0, 'rgba(59, 130, 246, 0.3)');
@@ -222,10 +240,10 @@
                 revenueChart = new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: labels,
+                        labels: productsData.map(item => item.product_name),
                         datasets: [{
                             label: 'Revenue',
-                            data: revenueData,
+                            data: productsData.map(item => item.total_revenue || 0),
                             borderColor: '#3b82f6',
                             backgroundColor: gradient,
                             borderWidth: 3,

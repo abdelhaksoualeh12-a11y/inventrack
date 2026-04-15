@@ -256,6 +256,7 @@ app.delete('/api/suppliers/:id', async (req, res) => {
 });
 
 // ============ STOCK MOVEMENTS ============
+// ============ STOCK MOVEMENTS ============
 app.get('/api/stock-movements', async (req, res) => {
     try {
         const rows = await db.all("SELECT * FROM stock_movements ORDER BY date DESC LIMIT 50", []);
@@ -264,6 +265,7 @@ app.get('/api/stock-movements', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
 app.post('/api/stock-movements', async (req, res) => {
     const { product_id, product_name, type, quantity, details } = req.body;
     try {
@@ -288,6 +290,14 @@ app.post('/api/stock-movements', async (req, res) => {
         if (type === 'IN') {
             newQuantity = product.quantity + quantity;
             await db.run(`UPDATE products SET quantity = $1 WHERE id = $2`, [newQuantity, product_id]);
+
+            // STOCK IN = Buying products = This is a COST, so record as negative profit
+            const totalCost = quantity * (product.buying_price || 0);
+            await db.run(
+                `INSERT INTO sales_profit (product_id, product_name, quantity, unit_cost, unit_price, unit_profit, total_revenue, total_profit, sale_date, transaction_type) 
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_DATE, $9)`,
+                [product_id, product_name, quantity, product.buying_price || 0, 0, 0, 0, -totalCost, 'PURCHASE']
+            );
         } else {
             newQuantity = product.quantity - quantity;
             await db.run(`UPDATE products SET quantity = $1 WHERE id = $2 AND quantity >= $1`, [newQuantity, product_id]);
@@ -298,9 +308,16 @@ app.post('/api/stock-movements', async (req, res) => {
                 const totalProfit = quantity * unitProfit;
                 const totalRevenue = quantity * (product.selling_price || 0);
                 await db.run(
-                    `INSERT INTO sales_profit (product_id, product_name, quantity, unit_cost, unit_price, unit_profit, total_revenue, total_profit, sale_date) 
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_DATE)`,
-                    [product_id, product_name, quantity, product.buying_price || 0, product.selling_price || 0, unitProfit, totalRevenue, totalProfit]
+                    `INSERT INTO sales_profit (product_id, product_name, quantity, unit_cost, unit_price, unit_profit, total_revenue, total_profit, sale_date, transaction_type) 
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_DATE, $9)`,
+                    [product_id, product_name, quantity, product.buying_price || 0, product.selling_price || 0, unitProfit, totalRevenue, totalProfit, 'SALE']
+                );
+            } else {
+                // Other stock-out reasons (not sale) - just record as adjustment with zero profit
+                await db.run(
+                    `INSERT INTO sales_profit (product_id, product_name, quantity, unit_cost, unit_price, unit_profit, total_revenue, total_profit, sale_date, transaction_type) 
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_DATE, $9)`,
+                    [product_id, product_name, quantity, product.buying_price || 0, 0, 0, 0, 0, 'ADJUSTMENT']
                 );
             }
         }
@@ -347,7 +364,7 @@ app.get('/api/most-sold-products', async (req, res) => {
     }
 });
 
-// Add profit endpoint
+// Total profit endpoint - correctly sums sales profit minus purchase costs
 app.get('/api/total-profit', async (req, res) => {
     const range = req.query.range || 'month';
     let dateCondition = '';
@@ -360,9 +377,9 @@ app.get('/api/total-profit', async (req, res) => {
     try {
         const result = await db.get(`
             SELECT 
-                COALESCE(SUM(total_revenue), 0) as total_revenue,
+                COALESCE(SUM(CASE WHEN transaction_type = 'SALE' THEN total_revenue ELSE 0 END), 0) as total_revenue,
                 COALESCE(SUM(total_profit), 0) as total_profit,
-                COALESCE(SUM(quantity), 0) as total_units_sold
+                COALESCE(SUM(CASE WHEN transaction_type = 'SALE' THEN quantity ELSE 0 END), 0) as total_units_sold
             FROM sales_profit 
             WHERE ${dateCondition}
         `, []);
@@ -377,9 +394,9 @@ app.get('/api/all-time-profit', async (req, res) => {
     try {
         const result = await db.get(`
             SELECT 
-                COALESCE(SUM(total_revenue), 0) as total_revenue,
+                COALESCE(SUM(CASE WHEN transaction_type = 'SALE' THEN total_revenue ELSE 0 END), 0) as total_revenue,
                 COALESCE(SUM(total_profit), 0) as total_profit,
-                COALESCE(SUM(quantity), 0) as total_units_sold
+                COALESCE(SUM(CASE WHEN transaction_type = 'SALE' THEN quantity ELSE 0 END), 0) as total_units_sold
             FROM sales_profit
         `, []);
         res.json(result || { total_revenue: 0, total_profit: 0, total_units_sold: 0 });

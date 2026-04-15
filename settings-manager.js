@@ -41,12 +41,12 @@ function getSettings() {
 function saveSettings(settings) {
     const oldSettings = getSettings();
     localStorage.setItem('appSettings', JSON.stringify(settings));
-    
+
     // Convert all prices if currency changed
     if (oldSettings.currency !== settings.currency) {
         convertAllPrices(oldSettings.currency, settings.currency);
     }
-    
+
     window.dispatchEvent(new CustomEvent('settingsChanged', { detail: settings }));
 }
 
@@ -64,7 +64,7 @@ function convertAllPrices(fromCurrency, toCurrency) {
             el.innerText = formatPrice(convertedAmount);
         }
     });
-    
+
     // Update inventory value card
     const valueCard = document.querySelector('.card-stats[style*="border-top-color: #8b5cf6"] .value');
     if (valueCard) {
@@ -103,12 +103,12 @@ function formatDate(dateStr, format = null) {
     const dateFormat = format || settings.dateFormat;
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return dateStr;
-    
+
     const day = d.getDate().toString().padStart(2, '0');
     const month = (d.getMonth() + 1).toString().padStart(2, '0');
     const year = d.getFullYear();
-    
-    switch(dateFormat) {
+
+    switch (dateFormat) {
         case 'DD/MM/YYYY': return `${day}/${month}/${year}`;
         case 'MM/DD/YYYY': return `${month}/${day}/${year}`;
         case 'YYYY-MM-DD': return `${year}-${month}-${day}`;
@@ -148,20 +148,21 @@ function formatDateOnly(dateStr, format = null) {
 }
 
 // Update all price displays on the page
+// Update all price displays on the page
 function updateAllPriceDisplays() {
     const settings = getSettings();
-    
+
     document.querySelectorAll('[data-price]').forEach(el => {
         let amount = parseFloat(el.dataset.price);
         if (!isNaN(amount)) {
-            // Store original USD price
+            // Store original USD price if not already stored
             if (!el.dataset.originalPrice) {
                 el.dataset.originalPrice = amount;
             }
             // Convert from USD to selected currency
-            amount = convertCurrency(parseFloat(el.dataset.originalPrice), 'USD', settings.currency);
-            el.dataset.price = amount;
-            el.innerText = formatPrice(amount);
+            const convertedAmount = convertCurrency(parseFloat(el.dataset.originalPrice), 'USD', settings.currency);
+            el.dataset.price = convertedAmount;
+            el.innerText = formatPrice(convertedAmount);
         }
     });
 
@@ -173,9 +174,23 @@ function updateAllPriceDisplays() {
             if (!valueCard.dataset.originalPrice) {
                 valueCard.dataset.originalPrice = amount;
             }
-            amount = convertCurrency(parseFloat(valueCard.dataset.originalPrice), 'USD', settings.currency);
-            valueCard.dataset.price = amount;
-            valueCard.innerText = formatPrice(amount);
+            const convertedAmount = convertCurrency(parseFloat(valueCard.dataset.originalPrice), 'USD', settings.currency);
+            valueCard.dataset.price = convertedAmount;
+            valueCard.innerText = formatPrice(convertedAmount);
+        }
+    }
+
+    // Also update total profit card
+    const profitCard = document.getElementById('totalProfitValue');
+    if (profitCard) {
+        let amount = parseFloat(profitCard.dataset.price);
+        if (!isNaN(amount)) {
+            if (!profitCard.dataset.originalPrice) {
+                profitCard.dataset.originalPrice = amount;
+            }
+            const convertedAmount = convertCurrency(parseFloat(profitCard.dataset.originalPrice), 'USD', settings.currency);
+            profitCard.dataset.price = convertedAmount;
+            profitCard.innerText = formatPrice(convertedAmount);
         }
     }
 }
