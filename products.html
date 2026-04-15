@@ -290,6 +290,7 @@
                 showWarning('Quantity cannot be negative');
                 return false;
             }
+            // Fix: Check selling_price instead of price
             if (product.selling_price <= 0) {
                 showWarning('Selling price must be greater than 0');
                 return false;

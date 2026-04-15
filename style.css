@@ -909,3 +909,119 @@ tr:hover {
         font-size: 0.7rem;
     }
 }
+/* ============ MOBILE FIXES - PREVENT ZOOM OUT ISSUES ============ */
+
+/* Prevent horizontal scroll on body */
+html, body {
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
+}
+
+/* Fix dashboard charts on mobile */
+@media screen and (max-width: 768px) {
+    /* Make charts container scrollable horizontally */
+    .grid-2 {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Fix chart canvas sizing */
+    .box-section {
+        overflow-x: auto;
+        min-width: 0;
+    }
+    
+    canvas {
+        max-width: 100%;
+        height: auto !important;
+        min-height: 250px;
+    }
+    
+    /* Make sure charts don't overflow */
+    #revenueChart, #profitChart {
+        width: 100% !important;
+        min-width: 300px;
+    }
+    
+    /* Fix alerts page on mobile */
+    .alerts-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .alert-stats {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .alert-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .alert-icon {
+        margin: 0 auto;
+    }
+    
+    .alert-action {
+        width: 100%;
+    }
+    
+    .alert-action .btn-primary {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    /* Fix tables to scroll horizontally */
+    .table-wrapper, 
+    .box-section > div[style*="overflow-x"],
+    .history-content {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    table {
+        min-width: 500px;
+    }
+    
+    /* Fix product cards grid */
+    .grid-3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .grid-3 {
+        grid-template-columns: 1fr;
+    }
+    
+    .alert-stats {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .alert-stat {
+        justify-content: space-between;
+        width: 100%;
+    }
+}
+
+/* Fix for chart responsiveness - ensure charts don't break layout */
+.chart-container canvas,
+.box-section canvas {
+    max-width: 100%;
+    height: auto !important;
+}
+
+/* Fix for the dashboard stats cards on very small screens */
+@media screen and (max-width: 380px) {
+    .card-stats .value {
+        font-size: 1rem;
+    }
+    
+    .card-stats h3 {
+        font-size: 0.6rem;
+    }
+}

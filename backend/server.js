@@ -116,7 +116,6 @@ app.post('/api/admin/reset-password', async (req, res) => {
 });
 
 // ============ PRODUCTS ============
-// ============ PRODUCTS (Updated with buying/selling price) ============
 app.get('/api/products', async (req, res) => {
     try {
         const rows = await db.all("SELECT * FROM products ORDER BY created_date DESC", []);
@@ -130,13 +129,17 @@ app.post('/api/products', async (req, res) => {
     const { name, sku, category, quantity, buying_price, selling_price, alert_qty } = req.body;
     const status = quantity === 0 ? 'Out of Stock' : quantity <= alert_qty ? 'Low Stock' : 'In Stock';
     try {
+        const finalBuyingPrice = buying_price || 0;
+        const finalSellingPrice = selling_price || 0;
+        
         const result = await db.run(
             `INSERT INTO products (name, sku, category, quantity, buying_price, selling_price, status, alert_qty) 
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-            [name, sku, category, quantity, buying_price || 0, selling_price || 0, status, alert_qty]
+            [name, sku, category, quantity, finalBuyingPrice, finalSellingPrice, status, alert_qty || 10]
         );
         res.json({ id: result.lastID, message: 'Product added' });
     } catch (error) {
+        console.error('Product insert error:', error);
         res.status(500).json({ error: error.message });
     }
 });
