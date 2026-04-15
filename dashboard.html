@@ -137,311 +137,311 @@
     </main>
 
     <script>
-    const API_URL = 'https://inventrack-backend-2wso.onrender.com/api';
-    let revenueChart = null;
-    let profitChart = null;
-    let isRefreshing = false; // Prevent multiple simultaneous refreshes
+        const API_URL = 'https://inventrack-backend-2wso.onrender.com/api';
+        let revenueChart = null;
+        let profitChart = null;
+        let isRefreshing = false; // Prevent multiple simultaneous refreshes
 
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function (m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
-
-    // Load all dashboard stats
-    async function loadDashboardStats() {
-        try {
-            const response = await fetch(`${API_URL}/dashboard/stats`);
-            const stats = await response.json();
-
-            document.getElementById('totalProducts').innerText = stats.total_products || 0;
-            document.getElementById('totalStock').innerText = stats.total_stock || 0;
-            document.getElementById('lowStockItems').innerText = stats.low_stock || 0;
-            document.getElementById('outOfStock').innerText = stats.out_of_stock || 0;
-            document.getElementById('totalCategories').innerText = stats.total_categories || 0;
-            document.getElementById('stockInTotal').innerText = stats.stock_in_total || 0;
-            document.getElementById('stockOutTotal').innerText = stats.stock_out_total || 0;
-        } catch (error) {
-            console.error('Error loading dashboard stats:', error);
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function (m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
         }
-    }
 
-    // Load inventory value
-    async function loadInventoryValue() {
-        try {
-            const response = await fetch(`${API_URL}/inventory-value`);
-            const data = await response.json();
-            const valueEl = document.getElementById('inventoryValue');
-            if (valueEl) {
-                const amount = data.total_value || 0;
-                valueEl.innerText = formatPrice(amount);
-                valueEl.setAttribute('data-price', amount);
-                valueEl.setAttribute('data-original-price', amount);
+        // Load all dashboard stats
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch(`${API_URL}/dashboard/stats`);
+                const stats = await response.json();
+
+                document.getElementById('totalProducts').innerText = stats.total_products || 0;
+                document.getElementById('totalStock').innerText = stats.total_stock || 0;
+                document.getElementById('lowStockItems').innerText = stats.low_stock || 0;
+                document.getElementById('outOfStock').innerText = stats.out_of_stock || 0;
+                document.getElementById('totalCategories').innerText = stats.total_categories || 0;
+                document.getElementById('stockInTotal').innerText = stats.stock_in_total || 0;
+                document.getElementById('stockOutTotal').innerText = stats.stock_out_total || 0;
+            } catch (error) {
+                console.error('Error loading dashboard stats:', error);
             }
-        } catch (error) {
-            console.error('Error loading inventory value:', error);
         }
-    }
 
-    // Load total profit
-    async function loadTotalProfit(range = 'month') {
-        try {
-            const response = await fetch(`${API_URL}/total-profit?range=${range}`);
-            const data = await response.json();
-            const profitEl = document.getElementById('totalProfitValue');
-            if (profitEl) {
-                const profit = data.total_profit || 0;
-                profitEl.innerText = formatPrice(profit);
-                profitEl.setAttribute('data-price', profit);
-                profitEl.setAttribute('data-original-price', profit);
+        // Load inventory value
+        async function loadInventoryValue() {
+            try {
+                const response = await fetch(`${API_URL}/inventory-value`);
+                const data = await response.json();
+                const valueEl = document.getElementById('inventoryValue');
+                if (valueEl) {
+                    const amount = data.total_value || 0;
+                    valueEl.innerText = formatPrice(amount);
+                    valueEl.setAttribute('data-price', amount);
+                    valueEl.setAttribute('data-original-price', amount);
+                }
+            } catch (error) {
+                console.error('Error loading inventory value:', error);
             }
-            
-            // Also load all-time profit for reference
-            const allTimeResponse = await fetch(`${API_URL}/all-time-profit`);
-            const allTimeData = await allTimeResponse.json();
-            console.log('All-time profit:', allTimeData);
-            
-            return data;
-        } catch (error) {
-            console.error('Error loading profit:', error);
-            return { total_revenue: 0, total_profit: 0 };
         }
-    }
 
-    // Load revenue chart data
-    async function loadRevenueChart(range = 'month') {
-        try {
-            // Get most profitable products for the chart
-            const productsResponse = await fetch(`${API_URL}/most-profitable-products?range=${range}`);
-            const productsData = await productsResponse.json();
+        // Load total profit
+        async function loadTotalProfit(range = 'month') {
+            try {
+                const response = await fetch(`${API_URL}/total-profit?range=${range}`);
+                const data = await response.json();
+                const profitEl = document.getElementById('totalProfitValue');
+                if (profitEl) {
+                    const profit = data.total_profit || 0;
+                    profitEl.innerText = formatPrice(profit);
+                    profitEl.setAttribute('data-price', profit);
+                    profitEl.setAttribute('data-original-price', profit);
+                }
 
-            const ctx = document.getElementById('revenueChart').getContext('2d');
-            if (revenueChart) revenueChart.destroy();
+                // Also load all-time profit for reference
+                const allTimeResponse = await fetch(`${API_URL}/all-time-profit`);
+                const allTimeData = await allTimeResponse.json();
+                console.log('All-time profit:', allTimeData);
 
-            if (productsData.length === 0) {
+                return data;
+            } catch (error) {
+                console.error('Error loading profit:', error);
+                return { total_revenue: 0, total_profit: 0 };
+            }
+        }
+
+        // Load revenue chart data
+        async function loadRevenueChart(range = 'month') {
+            try {
+                // Get most profitable products for the chart
+                const productsResponse = await fetch(`${API_URL}/most-profitable-products?range=${range}`);
+                const productsData = await productsResponse.json();
+
+                const ctx = document.getElementById('revenueChart').getContext('2d');
+                if (revenueChart) revenueChart.destroy();
+
+                if (productsData.length === 0) {
+                    revenueChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: ['No sales data yet'],
+                            datasets: [{
+                                label: 'Revenue',
+                                data: [0],
+                                borderColor: '#3b82f6'
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false }
+                    });
+                    return;
+                }
+
+                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                gradient.addColorStop(0, 'rgba(59, 130, 246, 0.3)');
+                gradient.addColorStop(1, 'rgba(59, 130, 246, 0.02)');
+
                 revenueChart = new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: ['No sales data yet'],
+                        labels: productsData.map(item => item.product_name),
                         datasets: [{
                             label: 'Revenue',
-                            data: [0],
-                            borderColor: '#3b82f6'
+                            data: productsData.map(item => item.total_revenue || 0),
+                            borderColor: '#3b82f6',
+                            backgroundColor: gradient,
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#3b82f6',
+                            pointBorderColor: 'white',
+                            pointBorderWidth: 2,
+                            tension: 0.4,
+                            fill: true
                         }]
                     },
-                    options: { responsive: true, maintainAspectRatio: false }
-                });
-                return;
-            }
-
-            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.3)');
-            gradient.addColorStop(1, 'rgba(59, 130, 246, 0.02)');
-
-            revenueChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: productsData.map(item => item.product_name),
-                    datasets: [{
-                        label: 'Revenue',
-                        data: productsData.map(item => item.total_revenue || 0),
-                        borderColor: '#3b82f6',
-                        backgroundColor: gradient,
-                        borderWidth: 3,
-                        pointRadius: 4,
-                        pointBackgroundColor: '#3b82f6',
-                        pointBorderColor: 'white',
-                        pointBorderWidth: 2,
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function (context) {
-                                    return `Revenue: ${formatPrice(context.raw)}`;
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return `Revenue: ${formatPrice(context.raw)}`;
+                                    }
                                 }
                             }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: '#e2e8f0' },
-                            ticks: { callback: value => formatPrice(value) }
                         },
-                        x: { grid: { display: false } }
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: '#e2e8f0' },
+                                ticks: { callback: value => formatPrice(value) }
+                            },
+                            x: { grid: { display: false } }
+                        }
                     }
-                }
-            });
-        } catch (error) {
-            console.error('Error loading revenue chart:', error);
+                });
+            } catch (error) {
+                console.error('Error loading revenue chart:', error);
+            }
         }
-    }
 
-    // Load most profitable products (horizontal bar chart)
-    async function loadProfitableProductsChart(range = 'month') {
-        try {
-            const response = await fetch(`${API_URL}/most-profitable-products?range=${range}`);
-            const data = await response.json();
+        // Load most profitable products (horizontal bar chart)
+        async function loadProfitableProductsChart(range = 'month') {
+            try {
+                const response = await fetch(`${API_URL}/most-profitable-products?range=${range}`);
+                const data = await response.json();
 
-            const ctx = document.getElementById('profitChart').getContext('2d');
-            if (profitChart) profitChart.destroy();
+                const ctx = document.getElementById('profitChart').getContext('2d');
+                if (profitChart) profitChart.destroy();
 
-            if (data.length === 0) {
+                if (data.length === 0) {
+                    profitChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['No sales data yet'],
+                            datasets: [{
+                                label: 'Profit',
+                                data: [0],
+                                backgroundColor: 'rgba(245, 158, 11, 0.7)'
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y',
+                            responsive: true,
+                            maintainAspectRatio: false
+                        }
+                    });
+                    return;
+                }
+
                 profitChart = new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: ['No sales data yet'],
+                        labels: data.map(item => item.product_name),
                         datasets: [{
-                            label: 'Profit',
-                            data: [0],
-                            backgroundColor: 'rgba(245, 158, 11, 0.7)'
+                            label: 'Total Profit',
+                            data: data.map(item => item.total_profit),
+                            backgroundColor: 'rgba(245, 158, 11, 0.7)',
+                            borderColor: '#f59e0b',
+                            borderWidth: 2,
+                            borderRadius: 6
                         }]
                     },
                     options: {
                         indexAxis: 'y',
                         responsive: true,
-                        maintainAspectRatio: false
-                    }
-                });
-                return;
-            }
-
-            profitChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: data.map(item => item.product_name),
-                    datasets: [{
-                        label: 'Total Profit',
-                        data: data.map(item => item.total_profit),
-                        backgroundColor: 'rgba(245, 158, 11, 0.7)',
-                        borderColor: '#f59e0b',
-                        borderWidth: 2,
-                        borderRadius: 6
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function (context) {
-                                    return `Profit: ${formatPrice(context.raw)}`;
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return `Profit: ${formatPrice(context.raw)}`;
+                                    }
                                 }
                             }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            grid: { color: '#e2e8f0' },
-                            ticks: { callback: value => formatPrice(value) }
                         },
-                        y: { grid: { display: false } }
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                grid: { color: '#e2e8f0' },
+                                ticks: { callback: value => formatPrice(value) }
+                            },
+                            y: { grid: { display: false } }
+                        }
                     }
-                }
-            });
-        } catch (error) {
-            console.error('Error loading profitable products:', error);
+                });
+            } catch (error) {
+                console.error('Error loading profitable products:', error);
+            }
         }
-    }
 
-    // Load low stock alerts
-    async function loadLowStockAlerts() {
-        try {
-            const response = await fetch(`${API_URL}/products`);
-            const products = await response.json();
-            const lowStock = products.filter(p => p.status === 'Low Stock');
-            const tbody = document.getElementById('lowStockTableBody');
+        // Load low stock alerts
+        async function loadLowStockAlerts() {
+            try {
+                const response = await fetch(`${API_URL}/products`);
+                const products = await response.json();
+                const lowStock = products.filter(p => p.status === 'Low Stock');
+                const tbody = document.getElementById('lowStockTableBody');
 
-            if (lowStock.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:#94a3b8;">No low stock items</td></tr>';
-            } else {
-                tbody.innerHTML = lowStock.slice(0, 5).map(p => `
+                if (lowStock.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:#94a3b8;">No low stock items</td></tr>';
+                } else {
+                    tbody.innerHTML = lowStock.slice(0, 5).map(p => `
                     <tr><td>${escapeHtml(p.name)}</td><td>${p.quantity} Left</td></tr>
                 `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading low stock alerts:', error);
             }
-        } catch (error) {
-            console.error('Error loading low stock alerts:', error);
         }
-    }
 
-    // Load out of stock alerts
-    async function loadOutOfStockAlerts() {
-        try {
-            const response = await fetch(`${API_URL}/products`);
-            const products = await response.json();
-            const outOfStock = products.filter(p => p.status === 'Out of Stock');
-            const tbody = document.getElementById('outOfStockTableBody');
+        // Load out of stock alerts
+        async function loadOutOfStockAlerts() {
+            try {
+                const response = await fetch(`${API_URL}/products`);
+                const products = await response.json();
+                const outOfStock = products.filter(p => p.status === 'Out of Stock');
+                const tbody = document.getElementById('outOfStockTableBody');
 
-            if (outOfStock.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:#94a3b8;">No out of stock items</td></tr>';
-            } else {
-                tbody.innerHTML = outOfStock.slice(0, 5).map(p => `
+                if (outOfStock.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:#94a3b8;">No out of stock items</td></tr>';
+                } else {
+                    tbody.innerHTML = outOfStock.slice(0, 5).map(p => `
                     <tr><td>${escapeHtml(p.name)}</td><td>0 Left</td></tr>
                 `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading out of stock alerts:', error);
             }
-        } catch (error) {
-            console.error('Error loading out of stock alerts:', error);
         }
-    }
 
-    // Refresh all dashboard data
-    async function refreshDashboard() {
-        if (isRefreshing) return; // Prevent multiple simultaneous refreshes
-        isRefreshing = true;
-        
-        try {
-            const range = document.getElementById('chartTimeRange')?.value || 'month';
-            await loadDashboardStats();
-            await loadInventoryValue();
-            await loadTotalProfit(range);
-            await loadRevenueChart(range);
-            await loadProfitableProductsChart(range);
-            await loadLowStockAlerts();
-            await loadOutOfStockAlerts();
-            if (typeof applyGlobalSettings === 'function') {
-                applyGlobalSettings();
+        // Refresh all dashboard data
+        async function refreshDashboard() {
+            if (isRefreshing) return; // Prevent multiple simultaneous refreshes
+            isRefreshing = true;
+
+            try {
+                const range = document.getElementById('chartTimeRange')?.value || 'month';
+                await loadDashboardStats();
+                await loadInventoryValue();
+                await loadTotalProfit(range);
+                await loadRevenueChart(range);
+                await loadProfitableProductsChart(range);
+                await loadLowStockAlerts();
+                await loadOutOfStockAlerts();
+                if (typeof applyGlobalSettings === 'function') {
+                    applyGlobalSettings();
+                }
+            } catch (error) {
+                console.error('Error refreshing dashboard:', error);
+            } finally {
+                isRefreshing = false;
             }
-        } catch (error) {
-            console.error('Error refreshing dashboard:', error);
-        } finally {
-            isRefreshing = false;
         }
-    }
 
-    // Event listeners
-    document.getElementById('chartTimeRange')?.addEventListener('change', (e) => {
-        const range = e.target.value;
-        loadTotalProfit(range);
-        loadRevenueChart(range);
-        loadProfitableProductsChart(range);
-    });
+        // Event listeners
+        document.getElementById('chartTimeRange')?.addEventListener('change', (e) => {
+            const range = e.target.value;
+            loadTotalProfit(range);
+            loadRevenueChart(range);
+            loadProfitableProductsChart(range);
+        });
 
-    window.addEventListener('stockMovementChanged', () => {
-        setTimeout(refreshDashboard, 100); // Small delay to prevent race conditions
-    });
-    
-    window.addEventListener('settingsChanged', () => {
-        setTimeout(refreshDashboard, 100);
-    });
+        window.addEventListener('stockMovementChanged', () => {
+            setTimeout(refreshDashboard, 100); // Small delay to prevent race conditions
+        });
 
-    // Initialize - only once
-    refreshDashboard();
-</script>
+        window.addEventListener('settingsChanged', () => {
+            setTimeout(refreshDashboard, 100);
+        });
+
+        // Initialize - only once
+        refreshDashboard();
+    </script>
 </body>
 
 </html>

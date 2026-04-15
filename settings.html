@@ -25,6 +25,24 @@
             font-size: 0.9rem;
             color: #64748b;
         }
+
+        .save-btn {
+            margin-top: 1rem;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .admin-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+            text-transform: uppercase;
+        }
     </style>
 </head>
 
@@ -40,7 +58,7 @@
         <a href="prediction.html"><i class="fas fa-chart-line"></i> Predictions</a>
         <a href="alerts.html"><i class="fas fa-bell"></i> Alerts</a>
         <a href="users.html"><i class="fas fa-users-cog"></i> Users</a>
-        <a href="settings.html"><i class="fas fa-cog"></i> Settings</a>
+        <a href="settings.html" class="active"><i class="fas fa-cog"></i> Settings</a>
         <a href="change-password.html"><i class="fas fa-key"></i> Change Password</a>
         <a href="index.html" style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); color: #ef4444;"><i
                 class="fas fa-sign-out-alt"></i> Logout</a>
@@ -48,11 +66,18 @@
 
     <main class="main-content">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-            <h1 class="page-header" style="margin-bottom: 0; border: none; padding: 0;">System Settings</h1>
-            <button id="saveSettingsBtn" class="btn-primary" style="width: auto;"><i class="fas fa-save"></i> Save
-                Changes</button>
+            <h1 class="page-header" style="margin-bottom: 0; border: none; padding: 0;">
+                System Settings
+                <span id="adminBadge" class="admin-badge" style="display: none;">
+                    <i class="fas fa-crown"></i> Administrator
+                </span>
+            </h1>
+            <button id="saveSettingsBtn" class="btn-primary" style="width: auto;">
+                <i class="fas fa-save"></i> Save All Settings
+            </button>
         </div>
 
+        <!-- First Row: Company Profile & Admin Account -->
         <div class="grid-2">
             <!-- Company Profile -->
             <section class="box-section">
@@ -75,86 +100,142 @@
                         <input type="text" id="taxId" value="TRN-5544332211">
                     </div>
                 </form>
+                <p style="color: #94a3b8; font-size: 0.75rem; margin-top: 1rem;">
+                    <i class="fas fa-info-circle"></i> Company information is saved locally
+                </p>
             </section>
 
-            <!-- Currency & Timezone Settings -->
-            <div>
-                <section class="box-section">
-                    <h3><i class="fas fa-globe" style="color: #64748b; margin-right:8px;"></i> Currency Settings</h3>
+            <!-- Admin Account Settings -->
+            <section class="box-section" id="adminAccountSection" style="display: none;">
+                <h3><i class="fas fa-user-shield" style="color: #3b82f6; margin-right:8px;"></i> Admin Account</h3>
+                <form id="adminAccountForm">
                     <div class="form-group">
-                        <label>Default Currency</label>
-                        <select id="currencySelect">
-                            <option value="USD">USD ($) - US Dollar</option>
-                            <option value="EUR">EUR (€) - Euro</option>
-                            <option value="GBP">GBP (£) - British Pound</option>
-                            <option value="DZD">DZD (دج) - Algerian Dinar</option>
-                        </select>
+                        <label>Admin Email Address</label>
+                        <input type="email" id="adminEmail" value="admin@inventrack.com" required>
+                        <small style="color: #64748b;">Used for login and password recovery</small>
                     </div>
                     <div class="form-group">
-                        <label>Currency Position</label>
-                        <select id="currencyPosition">
-                            <option value="before">Before amount (e.g., $100)</option>
-                            <option value="after">After amount (e.g., 100 $)</option>
-                        </select>
+                        <label>New Password (leave blank to keep current)</label>
+                        <input type="password" id="adminNewPassword" placeholder="Enter new password" minlength="6">
+                        <small style="color: #64748b;">Minimum 6 characters</small>
                     </div>
                     <div class="form-group">
-                        <label>Decimal Places</label>
-                        <select id="decimalPlaces">
-                            <option value="0">0 (e.g., 100)</option>
-                            <option value="2" selected>2 (e.g., 100.00)</option>
-                        </select>
+                        <label>Confirm New Password</label>
+                        <input type="password" id="adminConfirmPassword" placeholder="Confirm new password"
+                            minlength="6">
                     </div>
-                    <div class="form-group">
-                        <label>Currency Symbol Preview</label>
-                        <div><span id="currencyPreview" class="currency-display">$100.00</span></div>
-                    </div>
-                </section>
+                    <button type="submit" class="btn-primary save-btn">
+                        <i class="fas fa-save"></i> Update Admin Account
+                    </button>
+                </form>
+                <p style="color: #94a3b8; font-size: 0.75rem; margin-top: 1rem;">
+                    <i class="fas fa-shield-alt"></i> You will be logged out after changing credentials
+                </p>
+            </section>
 
-                <section class="box-section">
-                    <h3><i class="fas fa-clock" style="color: #64748b; margin-right:8px;"></i> Timezone & Date Settings
-                    </h3>
-                    <div class="form-group">
-                        <label>Timezone</label>
-                        <select id="timezoneSelect">
-                            <option value="UTC">UTC (Coordinated Universal Time)</option>
-                            <option value="America/New_York">EST (Eastern Standard Time)</option>
-                            <option value="America/Chicago">CST (Central Standard Time)</option>
-                            <option value="America/Denver">MST (Mountain Standard Time)</option>
-                            <option value="America/Los_Angeles">PST (Pacific Standard Time)</option>
-                            <option value="Europe/London">GMT (Greenwich Mean Time)</option>
-                            <option value="Europe/Paris">CET (Central European Time)</option>
-                            <option value="Asia/Dubai">GST (Gulf Standard Time)</option>
-                            <option value="Asia/Kolkata">IST (Indian Standard Time)</option>
-                            <option value="Asia/Tokyo">JST (Japan Standard Time)</option>
-                            <option value="Australia/Sydney">AEST (Australian Eastern Time)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Date Format</label>
-                        <select id="dateFormat">
-                            <option value="DD/MM/YYYY">DD/MM/YYYY (31/12/2024)</option>
-                            <option value="MM/DD/YYYY">MM/DD/YYYY (12/31/2024)</option>
-                            <option value="YYYY-MM-DD">YYYY-MM-DD (2024-12-31)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Time Format</label>
-                        <select id="timeFormat">
-                            <option value="24h">24-hour (14:30)</option>
-                            <option value="12h">12-hour (2:30 PM)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Current Time Preview</label>
-                        <div id="timePreview" class="timezone-preview">Loading...</div>
-                    </div>
-                </section>
-            </div>
+            <!-- Non-Admin Placeholder -->
+            <section class="box-section" id="nonAdminPlaceholder">
+                <h3><i class="fas fa-user" style="color: #64748b; margin-right:8px;"></i> Account</h3>
+                <p style="color: #64748b; text-align: center; padding: 2rem 0;">
+                    <i class="fas fa-info-circle" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i><br>
+                    Only administrators can modify account settings.<br>
+                    Please contact your system administrator.
+                </p>
+            </section>
+        </div>
+
+        <!-- Second Row: Currency & Timezone Settings -->
+        <div class="grid-2" style="margin-top: 1.75rem;">
+            <!-- Currency Settings -->
+            <section class="box-section">
+                <h3><i class="fas fa-globe" style="color: #64748b; margin-right:8px;"></i> Currency Settings</h3>
+                <div class="form-group">
+                    <label>Default Currency</label>
+                    <select id="currencySelect">
+                        <option value="USD">USD ($) - US Dollar</option>
+                        <option value="EUR">EUR (€) - Euro</option>
+                        <option value="GBP">GBP (£) - British Pound</option>
+                        <option value="DZD">DZD (دج) - Algerian Dinar</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Currency Position</label>
+                    <select id="currencyPosition">
+                        <option value="before">Before amount (e.g., $100)</option>
+                        <option value="after">After amount (e.g., 100 $)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Decimal Places</label>
+                    <select id="decimalPlaces">
+                        <option value="0">0 (e.g., 100)</option>
+                        <option value="2" selected>2 (e.g., 100.00)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Currency Symbol Preview</label>
+                    <div><span id="currencyPreview" class="currency-display">$100.00</span></div>
+                </div>
+            </section>
+
+            <!-- Timezone & Date Settings -->
+            <section class="box-section">
+                <h3><i class="fas fa-clock" style="color: #64748b; margin-right:8px;"></i> Timezone & Date Settings</h3>
+                <div class="form-group">
+                    <label>Timezone</label>
+                    <select id="timezoneSelect">
+                        <option value="UTC">UTC (Coordinated Universal Time)</option>
+                        <option value="America/New_York">EST (Eastern Standard Time)</option>
+                        <option value="America/Chicago">CST (Central Standard Time)</option>
+                        <option value="America/Denver">MST (Mountain Standard Time)</option>
+                        <option value="America/Los_Angeles">PST (Pacific Standard Time)</option>
+                        <option value="Europe/London">GMT (Greenwich Mean Time)</option>
+                        <option value="Europe/Paris">CET (Central European Time)</option>
+                        <option value="Asia/Dubai">GST (Gulf Standard Time)</option>
+                        <option value="Asia/Kolkata">IST (Indian Standard Time)</option>
+                        <option value="Asia/Tokyo">JST (Japan Standard Time)</option>
+                        <option value="Australia/Sydney">AEST (Australian Eastern Time)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Date Format</label>
+                    <select id="dateFormat">
+                        <option value="DD/MM/YYYY">DD/MM/YYYY (31/12/2024)</option>
+                        <option value="MM/DD/YYYY">MM/DD/YYYY (12/31/2024)</option>
+                        <option value="YYYY-MM-DD">YYYY-MM-DD (2024-12-31)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Time Format</label>
+                    <select id="timeFormat">
+                        <option value="24h">24-hour (14:30)</option>
+                        <option value="12h">12-hour (2:30 PM)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Current Time Preview</label>
+                    <div id="timePreview" class="timezone-preview">Loading...</div>
+                </div>
+            </section>
         </div>
     </main>
 
     <script src="settings-manager.js"></script>
     <script>
+        const API_URL = 'https://inventrack-backend-2wso.onrender.com/api';
+        const currentUserRole = localStorage.getItem('userRole');
+        const currentUserEmail = localStorage.getItem('userEmail');
+
+        // Show/hide admin section based on role
+        if (currentUserRole === 'Administrator') {
+            document.getElementById('adminAccountSection').style.display = 'block';
+            document.getElementById('nonAdminPlaceholder').style.display = 'none';
+            document.getElementById('adminBadge').style.display = 'inline-block';
+        } else {
+            document.getElementById('adminAccountSection').style.display = 'none';
+            document.getElementById('nonAdminPlaceholder').style.display = 'block';
+        }
+
         // Load settings into form
         function loadSettingsToForm() {
             const settings = getSettings();
@@ -174,6 +255,22 @@
 
             updateCurrencyPreview();
             updateTimePreview();
+        }
+
+        // Load admin email from server
+        async function loadAdminEmail() {
+            if (currentUserRole !== 'Administrator') return;
+
+            try {
+                const response = await fetch(`${API_URL}/users`);
+                const users = await response.json();
+                const admin = users.find(u => u.role === 'Administrator');
+                if (admin) {
+                    document.getElementById('adminEmail').value = admin.email;
+                }
+            } catch (error) {
+                console.error('Error loading admin email:', error);
+            }
         }
 
         function updateCurrencyPreview() {
@@ -239,12 +336,84 @@
             localStorage.setItem('companyAddress', document.getElementById('companyAddress').value);
             localStorage.setItem('taxId', document.getElementById('taxId').value);
 
-            alert('Settings saved successfully!');
+            alert('✅ Settings saved successfully!');
 
             // Force refresh of all pages
-            if (window.opener) {
-                window.opener.postMessage('settingsUpdated', '*');
-            }
+            window.dispatchEvent(new CustomEvent('settingsChanged', { detail: settings }));
+        }
+
+        // Handle admin account update
+        if (currentUserRole === 'Administrator') {
+            document.getElementById('adminAccountForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const newEmail = document.getElementById('adminEmail').value.trim();
+                const newPassword = document.getElementById('adminNewPassword').value;
+                const confirmPassword = document.getElementById('adminConfirmPassword').value;
+
+                if (!newEmail) {
+                    alert('Please enter an email address');
+                    return;
+                }
+
+                if (!isValidEmail(newEmail)) {
+                    alert('Please enter a valid email address');
+                    return;
+                }
+
+                if (newPassword && newPassword !== confirmPassword) {
+                    alert('New passwords do not match');
+                    return;
+                }
+
+                if (newPassword && newPassword.length < 6) {
+                    alert('Password must be at least 6 characters');
+                    return;
+                }
+
+                try {
+                    const token = localStorage.getItem('token');
+
+                    const updateData = { email: newEmail };
+                    if (newPassword) {
+                        updateData.password = newPassword;
+                    }
+
+                    const response = await fetch(`${API_URL}/admin/update-account`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(updateData)
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        let message = '✅ Admin email updated successfully!';
+                        if (newPassword) {
+                            message += ' Password has been changed.';
+                        }
+                        message += ' Please log in again with your new credentials.';
+
+                        alert(message);
+
+                        // Clear and redirect to login
+                        localStorage.clear();
+                        window.location.href = 'index.html';
+                    } else {
+                        alert('❌ ' + (data.error || 'Failed to update admin account'));
+                    }
+                } catch (error) {
+                    console.error('Error updating admin account:', error);
+                    alert('Error updating admin account. Please try again.');
+                }
+            });
+        }
+
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
         }
 
         // Event listeners
@@ -258,7 +427,9 @@
 
         setInterval(updateTimePreview, 1000);
 
+        // Initialize
         loadSettingsToForm();
+        loadAdminEmail();
     </script>
 </body>
 

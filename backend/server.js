@@ -660,12 +660,16 @@ app.post('/api/forgot-password', async (req, res) => {
         if (!user) {
             return res.status(404).json({ error: 'No account found with this email address' });
         }
-        console.log(`[PASSWORD RECOVERY] Email: ${email}, Password: [HIDDEN]`);
+
+        console.log(`[PASSWORD RECOVERY] Email: ${email}, User: ${user.name}`);
+
+        // In production, you would send an actual email here
+        // For demo, we'll return a success message
 
         res.json({
-            message: `Password recovery email sent to ${email}. Please check your inbox. (Demo: For production, an email would be sent)`,
-            // Only for demo - in production, NEVER return the password!
-            demo_password: 'admin123' // Default password for demo accounts
+            message: `Password recovery instructions have been sent to ${email}. Please check your inbox.`,
+            // Demo hint - in production, remove this!
+            demo_hint: user.role === 'Administrator' ? 'Default password is "admin123" unless changed' : 'Default password is "password123" unless changed'
         });
 
     } catch (error) {
@@ -693,6 +697,62 @@ app.get('/api/debug/sales-profit', async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+// ============ ADMIN ACCOUNT UPDATE ============
+app.put('/api/admin/update-account', async (req, res) => {
+    const { email, password } = req.body;
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+        return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, SECRET_KEY);
+
+        // Only administrators can update the admin account
+        if (decoded.role !== 'Administrator') {
+            return res.status(403).json({ error: 'Only administrators can update this account' });
+        }
+
+        // Get the admin user (there should be only one with Administrator role, or use the first one)
+        const admin = await db.get("SELECT * FROM users WHERE role = 'Administrator' LIMIT 1", []);
+
+        if (!admin) {
+            return res.status(404).json({ error: 'Administrator account not found' });
+        }
+
+        // Check if email is already taken by another user
+        if (email !== admin.email) {
+            const existingUser = await db.get("SELECT * FROM users WHERE email = $1 AND id != $2", [email, admin.id]);
+            if (existingUser) {
+                return res.status(400).json({ error: 'Email is already in use by another account' });
+            }
+        }
+
+        // Update the admin account
+        if (password) {
+            const hashedPassword = bcrypt.hashSync(password, 10);
+            await db.run(
+                "UPDATE users SET email = $1, password = $2 WHERE id = $3",
+                [email, hashedPassword, admin.id]
+            );
+        } else {
+            await db.run(
+                "UPDATE users SET email = $1 WHERE id = $2",
+                [email, admin.id]
+            );
+        }
+
+        res.json({
+            message: 'Administrator account updated successfully',
+            email: email
+        });
+
+    } catch (error) {
+        console.error('Admin account update error:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 app.listen(PORT, () => console.log(`Server on port ${PORT}`));
