@@ -148,21 +148,21 @@ function formatDateOnly(dateStr, format = null) {
 }
 
 // Update all price displays on the page
-// Update all price displays on the page
 function updateAllPriceDisplays() {
     const settings = getSettings();
 
     document.querySelectorAll('[data-price]').forEach(el => {
-        // Get the original USD price from the data-original-price attribute
-        let originalAmount = parseFloat(el.dataset.originalPrice || el.dataset.price);
-        if (!isNaN(originalAmount)) {
+        // Get the original USD price - first try data-original-price, then data-price
+        let originalAmount = parseFloat(el.getAttribute('data-original-price') || el.getAttribute('data-price'));
+
+        if (!isNaN(originalAmount) && originalAmount > 0) {
             // Store original USD price if not already stored
-            if (!el.dataset.originalPrice) {
-                el.dataset.originalPrice = originalAmount;
+            if (!el.getAttribute('data-original-price')) {
+                el.setAttribute('data-original-price', originalAmount);
             }
             // Convert from USD to selected currency
-            const convertedAmount = convertCurrency(parseFloat(el.dataset.originalPrice), 'USD', settings.currency);
-            el.dataset.price = convertedAmount;
+            const convertedAmount = convertCurrency(originalAmount, 'USD', settings.currency);
+            el.setAttribute('data-price', convertedAmount);
             el.innerText = formatPrice(convertedAmount);
         }
     });
@@ -170,13 +170,13 @@ function updateAllPriceDisplays() {
     // Update inventory value card
     const valueCard = document.querySelector('.card-stats[style*="border-top-color: #8b5cf6"] .value');
     if (valueCard) {
-        let amount = parseFloat(valueCard.dataset.originalPrice || valueCard.dataset.price);
-        if (!isNaN(amount)) {
-            if (!valueCard.dataset.originalPrice) {
-                valueCard.dataset.originalPrice = amount;
+        let amount = parseFloat(valueCard.getAttribute('data-original-price') || valueCard.getAttribute('data-price') || valueCard.innerText.replace(/[^0-9.-]+/g, ''));
+        if (!isNaN(amount) && amount > 0) {
+            if (!valueCard.getAttribute('data-original-price')) {
+                valueCard.setAttribute('data-original-price', amount);
             }
-            const convertedAmount = convertCurrency(parseFloat(valueCard.dataset.originalPrice), 'USD', settings.currency);
-            valueCard.dataset.price = convertedAmount;
+            const convertedAmount = convertCurrency(parseFloat(valueCard.getAttribute('data-original-price')), 'USD', settings.currency);
+            valueCard.setAttribute('data-price', convertedAmount);
             valueCard.innerText = formatPrice(convertedAmount);
         }
     }
@@ -184,18 +184,17 @@ function updateAllPriceDisplays() {
     // Update total profit card
     const profitCard = document.getElementById('totalProfitValue');
     if (profitCard) {
-        let amount = parseFloat(profitCard.dataset.originalPrice || profitCard.dataset.price);
+        let amount = parseFloat(profitCard.getAttribute('data-original-price') || profitCard.getAttribute('data-price') || profitCard.innerText.replace(/[^0-9.-]+/g, ''));
         if (!isNaN(amount)) {
-            if (!profitCard.dataset.originalPrice) {
-                profitCard.dataset.originalPrice = amount;
+            if (!profitCard.getAttribute('data-original-price')) {
+                profitCard.setAttribute('data-original-price', amount);
             }
-            const convertedAmount = convertCurrency(parseFloat(profitCard.dataset.originalPrice), 'USD', settings.currency);
-            profitCard.dataset.price = convertedAmount;
+            const convertedAmount = convertCurrency(parseFloat(profitCard.getAttribute('data-original-price')), 'USD', settings.currency);
+            profitCard.setAttribute('data-price', convertedAmount);
             profitCard.innerText = formatPrice(convertedAmount);
         }
     }
 }
-
 // Update all date displays on the page
 function updateAllDateDisplays() {
     document.querySelectorAll('[data-date]').forEach(el => {

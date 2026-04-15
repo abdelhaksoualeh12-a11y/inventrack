@@ -808,3 +808,16 @@ tr:hover {
     font-weight: 700;
     color: #0f172a;
 }
+/* Forgot Password Modal */
+#forgotPasswordModal .modal-content {
+    max-width: 400px;
+}
+
+#forgotPasswordModal h2 {
+    display: flex;
+    align-items: center;
+}
+
+#forgotPasswordModal p {
+    line-height: 1.5;
+}

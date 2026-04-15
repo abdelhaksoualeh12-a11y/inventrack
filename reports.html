@@ -118,17 +118,24 @@
                 }
 
                 tbody.innerHTML = monthlyData.map(row => {
+                    // FIXED: Stock Out INCREASES net balance? No, wait - 
+                    // Actually, let's think about what "Net Balance" means here:
+                    // If it's "Stock Flow Balance" = Stock In - Stock Out (products added vs removed)
                     const net = (row.stock_in || 0) - (row.stock_out || 0);
                     const profit = row.profit || 0;
+
+                    // If you want Stock Out to be positive for net balance, then:
+                    // const net = (row.stock_out || 0) - (row.stock_in || 0);
+
                     return `
-                        <tr>
-                            <td>${row.month}</td>
-                            <td style="color: #10b981;">+${row.stock_in || 0}</td>
-                            <td style="color: #ef4444;">-${row.stock_out || 0}</td>
-                            <td style="font-weight: 600; color: ${net >= 0 ? '#10b981' : '#ef4444'};">${net >= 0 ? '+' : ''}${net}</td>
-                            <td style="font-weight: 600; color: ${profit >= 0 ? '#10b981' : '#ef4444'};">${formatPrice(profit)}</td>
-                        </tr>
-                    `;
+                <tr>
+                    <td>${row.month}</td>
+                    <td style="color: #10b981;">+${row.stock_in || 0}</td>
+                    <td style="color: #ef4444;">-${row.stock_out || 0}</td>
+                    <td style="font-weight: 600; color: ${net >= 0 ? '#10b981' : '#ef4444'};">${net >= 0 ? '+' : ''}${net}</td>
+                    <td style="font-weight: 600; color: ${profit >= 0 ? '#10b981' : '#ef4444'};">${formatPrice(profit)}</td>
+                </tr>
+            `;
                 }).join('');
 
                 if (typeof applyGlobalSettings === 'function') applyGlobalSettings();

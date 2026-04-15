@@ -649,4 +649,27 @@ app.get('/api/reports/valuation-by-category', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+// ============ FORGOT PASSWORD ============
+app.post('/api/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    
+    try {
+        const user = await db.get("SELECT * FROM users WHERE email = $1", [email]);
+        
+        if (!user) {
+            return res.status(404).json({ error: 'No account found with this email address' });
+        }
+        console.log(`[PASSWORD RECOVERY] Email: ${email}, Password: [HIDDEN]`);
+        
+        res.json({ 
+            message: `Password recovery email sent to ${email}. Please check your inbox. (Demo: For production, an email would be sent)`,
+            // Only for demo - in production, NEVER return the password!
+            demo_password: 'admin123' // Default password for demo accounts
+        });
+        
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 app.listen(PORT, () => console.log(`Server on port ${PORT}`));
