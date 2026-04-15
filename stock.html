@@ -759,10 +759,10 @@
                         await loadProductsAndSuppliersForDropdowns();
                         stockInForm.reset();
                         window.dispatchEvent(new CustomEvent('stockMovementChanged'));
-                        alert(`✅ Stock In recorded! Added ${qty} units of ${productName}`);
+                        showSuccess(`✅ Stock In recorded! Added ${qty} units of ${productName}`);
                     } else {
                         const error = await response.json();
-                        alert('Failed to record stock in: ' + error.error);
+                        showError('Failed to record stock in: ' + error.error);
                     }
                 } catch (error) {
                     console.error('Error:', error);
@@ -819,15 +819,16 @@
                         })
                     });
 
+                    // Stock Out form handler
                     if (response.ok) {
                         await loadMovements();
                         await loadProductsAndSuppliersForDropdowns();
                         stockOutForm.reset();
                         window.dispatchEvent(new CustomEvent('stockMovementChanged'));
-                        alert(`✅ Stock Out recorded! Removed ${qty} units of ${productName}\nRemaining stock: ${currentStock - qty}`);
+                        showSuccess(`✅ Stock Out recorded! Removed ${qty} units of ${productName}\nRemaining stock: ${currentStock - qty}`);
                     } else {
                         const error = await response.json();
-                        alert('Failed to record stock out: ' + error.error);
+                        showError('Failed to record stock out: ' + error.error);
                     }
                 } catch (error) {
                     console.error('Error:', error);
@@ -858,10 +859,10 @@
                         if (response.ok) {
                             await loadMovements();
                             window.dispatchEvent(new CustomEvent('stockMovementChanged'));
-                            alert('✅ All stock movement records have been permanently deleted.');
+                            showSuccess('All stock movement records have been permanently deleted.');
                         } else {
                             const error = await response.json();
-                            alert('Failed to clear records: ' + error.error);
+                            showError('Failed to clear records: ' + error.error);
                         }
                     } catch (error) {
                         console.error('Error clearing movements:', error);
@@ -882,6 +883,7 @@
         loadProductsAndSuppliersForDropdowns();
         loadMovements();
     </script>
+    <script src="toast.js"></script>
 </body>
 
 </html>

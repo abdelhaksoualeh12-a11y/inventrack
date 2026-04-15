@@ -283,8 +283,9 @@
                     modal.classList.remove('active');
                     form.reset();
                     editingId = null;
+                    showSuccess(editingId ? 'Supplier updated successfully!' : 'Supplier added successfully!');
                 } else {
-                    alert('Failed to save supplier');
+                    showError('Failed to save supplier');
                 }
             } catch (error) {
                 console.error('Error saving supplier:', error);
@@ -296,11 +297,16 @@
         window.deleteSupplier = async (id) => {
             if (confirm('Are you sure you want to delete this supplier?')) {
                 try {
-                    await fetch(`${API_URL}/suppliers/${id}`, { method: 'DELETE' });
-                    await loadSuppliers();
+                    const response = await fetch(`${API_URL}/suppliers/${id}`, { method: 'DELETE' });
+                    if (response.ok) {
+                        await loadSuppliers();
+                        showSuccess('Supplier deleted successfully!');
+                    } else {
+                        showError('Failed to delete supplier');
+                    }
                 } catch (error) {
                     console.error('Error deleting supplier:', error);
-                    alert('Failed to delete supplier');
+                    showError('Failed to delete supplier');
                 }
             }
         };
@@ -331,6 +337,7 @@
 
         loadSuppliers();
     </script>
+    <script src="toast.js"></script>
 </body>
 
 </html>

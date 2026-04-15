@@ -563,7 +563,9 @@
                 if (response.ok) {
                     const data = await response.json();
                     if (data.temporaryPassword) {
-                        alert(`User created! Temporary password: ${data.temporaryPassword}`);
+                        showInfo(`User created! Temporary password: ${data.temporaryPassword}`, 5000);
+                    } else {
+                        showSuccess(editingId ? 'User updated successfully!' : 'User added successfully!');
                     }
                     await loadUsers();
                     modal.classList.remove('active');
@@ -572,7 +574,7 @@
                     applyRoleRestrictions();
                 } else {
                     const error = await response.json();
-                    alert('Failed to save user: ' + error.error);
+                    showError('Failed to save user: ' + error.error);
                 }
             } catch (error) {
                 console.error('Error saving user:', error);
@@ -589,13 +591,14 @@
                     });
                     if (response.ok) {
                         await loadUsers();
+                        showSuccess('User deleted successfully!');
                     } else {
                         const error = await response.json();
-                        alert('Failed to delete user: ' + error.error);
+                        showError('Failed to delete user: ' + error.error);
                     }
                 } catch (error) {
                     console.error('Error deleting user:', error);
-                    alert('Failed to delete user');
+                    showError('Failed to delete user');
                 }
             }
         };
@@ -627,6 +630,7 @@
         applyRoleRestrictions();
         loadUsers();
     </script>
+    <script src="toast.js"></script>
 </body>
 
 </html>
