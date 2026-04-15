@@ -342,6 +342,7 @@
             });
         }
         // Add this function to products.html to refresh only the status without full reload
+        // Add this function to products.html to refresh only the status without full reload
         async function refreshProductStatus() {
             try {
                 const response = await fetch(`${API_URL}/products`);
@@ -352,20 +353,33 @@
                     const existingRow = document.querySelector(`tr[data-id='${newProduct.id}']`);
                     if (existingRow) {
                         const cells = existingRow.querySelectorAll('td');
+                        // Quantity is at index 3
                         if (cells[3]) cells[3].innerText = newProduct.quantity;
+                        // Buying price is at index 4
                         if (cells[4]) {
-                            cells[4].innerText = formatPrice(newProduct.price);
-                            cells[4].setAttribute('data-price', newProduct.price);
+                            cells[4].innerText = formatPrice(newProduct.buying_price || 0);
+                            cells[4].setAttribute('data-price', newProduct.buying_price || 0);
                         }
+                        // Selling price is at index 5
                         if (cells[5]) {
-                            cells[5].innerText = newProduct.status;
-                            cells[5].style.color = getStatusColor(newProduct.status);
+                            cells[5].innerText = formatPrice(newProduct.selling_price || 0);
+                            cells[5].setAttribute('data-price', newProduct.selling_price || 0);
+                        }
+                        // Status is at index 6
+                        if (cells[6]) {
+                            cells[6].innerText = newProduct.status;
+                            cells[6].style.color = getStatusColor(newProduct.status);
                         }
                     }
                 });
 
                 // Also update allProducts for filtering
                 allProducts = freshProducts;
+
+                // Re-apply global settings for currency formatting
+                if (typeof applyGlobalSettings === 'function') {
+                    applyGlobalSettings();
+                }
             } catch (error) {
                 console.error('Error refreshing status:', error);
             }
@@ -546,10 +560,10 @@
 
         window.editProduct = (product) => {
             editingId = product.id;
-            document.getElementById('prodName').value = product.name;
-            document.getElementById('prodSKU').value = product.sku;
-            document.getElementById('prodCategory').value = product.category;
-            document.getElementById('prodQuantity').value = product.quantity;
+            document.getElementById('prodName').value = product.name || '';
+            document.getElementById('prodSKU').value = product.sku || '';
+            document.getElementById('prodCategory').value = product.category || '';
+            document.getElementById('prodQuantity').value = product.quantity || 0;
             document.getElementById('prodBuyingPrice').value = product.buying_price || 0;
             document.getElementById('prodSellingPrice').value = product.selling_price || 0;
             document.getElementById('prodAlertQty').value = product.alert_qty || 10;

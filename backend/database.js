@@ -144,14 +144,16 @@ async function initDatabase() {
             unit_profit DECIMAL(10,2),
             total_revenue DECIMAL(10,2),
             total_profit DECIMAL(10,2),
+            transaction_type TEXT DEFAULT 'SALE',
             sale_date DATE DEFAULT CURRENT_DATE
         )
     `);
     await pool.query(`ALTER TABLE sales_profit ADD COLUMN IF NOT EXISTS unit_cost DECIMAL(10,2) DEFAULT 0`);
     await pool.query(`ALTER TABLE sales_profit ADD COLUMN IF NOT EXISTS unit_profit DECIMAL(10,2) DEFAULT 0`);
     await pool.query(`ALTER TABLE sales_profit ADD COLUMN IF NOT EXISTS total_revenue DECIMAL(10,2) DEFAULT 0`);
+    await pool.query(`ALTER TABLE sales_profit ADD COLUMN IF NOT EXISTS transaction_type TEXT DEFAULT 'SALE'`);
     console.log('✅ Sales profit table ready');
-    
+
     // Update stock_movements table with new columns
     await pool.query(`
     ALTER TABLE stock_movements 
