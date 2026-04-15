@@ -153,11 +153,12 @@ function updateAllPriceDisplays() {
     const settings = getSettings();
 
     document.querySelectorAll('[data-price]').forEach(el => {
-        let amount = parseFloat(el.dataset.price);
-        if (!isNaN(amount)) {
+        // Get the original USD price from the data-original-price attribute
+        let originalAmount = parseFloat(el.dataset.originalPrice || el.dataset.price);
+        if (!isNaN(originalAmount)) {
             // Store original USD price if not already stored
             if (!el.dataset.originalPrice) {
-                el.dataset.originalPrice = amount;
+                el.dataset.originalPrice = originalAmount;
             }
             // Convert from USD to selected currency
             const convertedAmount = convertCurrency(parseFloat(el.dataset.originalPrice), 'USD', settings.currency);
@@ -166,10 +167,10 @@ function updateAllPriceDisplays() {
         }
     });
 
-    // Also update inventory value card
+    // Update inventory value card
     const valueCard = document.querySelector('.card-stats[style*="border-top-color: #8b5cf6"] .value');
     if (valueCard) {
-        let amount = parseFloat(valueCard.dataset.price);
+        let amount = parseFloat(valueCard.dataset.originalPrice || valueCard.dataset.price);
         if (!isNaN(amount)) {
             if (!valueCard.dataset.originalPrice) {
                 valueCard.dataset.originalPrice = amount;
@@ -180,10 +181,10 @@ function updateAllPriceDisplays() {
         }
     }
 
-    // Also update total profit card
+    // Update total profit card
     const profitCard = document.getElementById('totalProfitValue');
     if (profitCard) {
-        let amount = parseFloat(profitCard.dataset.price);
+        let amount = parseFloat(profitCard.dataset.originalPrice || profitCard.dataset.price);
         if (!isNaN(amount)) {
             if (!profitCard.dataset.originalPrice) {
                 profitCard.dataset.originalPrice = amount;

@@ -872,21 +872,6 @@
         }
 
         // ============ AUTO-REFRESH ============
-        let refreshInterval = setInterval(async () => {
-            await loadMovements();
-            await loadProductsAndSuppliersForDropdowns();
-        }, 30000);
-
-        window.addEventListener('beforeunload', () => {
-            if (refreshInterval) clearInterval(refreshInterval);
-        });
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                loadMovements();
-                loadProductsAndSuppliersForDropdowns();
-            }
-        });
-
         window.addEventListener('stockMovementChanged', () => {
             loadMovements();
             loadProductsAndSuppliersForDropdowns();

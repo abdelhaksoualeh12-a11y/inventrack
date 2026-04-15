@@ -101,8 +101,7 @@ async function initDatabase() {
 
         // Stock movements table with proper CASCADE
         await pool.query(`
-            DROP TABLE IF EXISTS stock_movements CASCADE;
-            CREATE TABLE stock_movements (
+            CREATE TABLE IF NOT EXISTS stock_movements (
                 id SERIAL PRIMARY KEY,
                 product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
                 product_name TEXT,
@@ -113,7 +112,8 @@ async function initDatabase() {
             )
         `);
         console.log('✅ Stock movements table ready');
-
+        await pool.query(`ALTER TABLE stock_movements ADD COLUMN IF NOT EXISTS reason TEXT`);
+        await pool.query(`ALTER TABLE stock_movements ADD COLUMN IF NOT EXISTS is_sale BOOLEAN DEFAULT false`);
         // Insert admin user if not exists
         const result = await pool.query("SELECT * FROM users WHERE email = 'admin@inventrack.com'");
         if (result.rows.length === 0) {

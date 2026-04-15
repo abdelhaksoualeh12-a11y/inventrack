@@ -307,7 +307,7 @@
             const isStaff = userRole === 'Staff';
 
             if (productsToRender.length === 0) {
-                tableBody.innerHTML = '<td><td colspan="8" style="text-align: center; padding: 2rem;">No products found</td</tr>';
+                tableBody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 2rem;">No products found</td></tr>';
                 return;
             }
 
@@ -325,19 +325,23 @@
                     actionsHtml = '<span style="color: #94a3b8;">View only</span>';
                 }
 
+                // Format prices with current currency settings
+                const formattedBuying = formatPrice(product.buying_price || 0);
+                const formattedSelling = formatPrice(product.selling_price || 0);
+
                 tr.innerHTML = `
-                    <td style="font-weight: 600; color: #0f172a;">${escapeHtml(product.name)}</td>
-                    <td style="color: #64748b;">${escapeHtml(product.sku)}</td>
-                    <td>${escapeHtml(product.category)}</td>
-                    <td>${product.quantity}</td>
-                    <td data-price="${product.buying_price || 0}" data-original-price="${product.buying_price || 0}">${formatPrice(product.buying_price || 0)}</td>
-                    <td data-price="${product.selling_price || 0}" data-original-price="${product.selling_price || 0}">${formatPrice(product.selling_price || 0)}</td>
-                    <td style="font-weight: 600; color: ${getStatusColor(product.status)};">${product.status}</td>
-                    <td data-date="${product.created_date}">${formatDate(product.created_date)}</td>
-                    <td class="table-actions" style="text-align: right;">
-                        ${actionsHtml}
-                    </td>
-                `;
+            <td style="font-weight: 600; color: #0f172a;">${escapeHtml(product.name)}</td>
+            <td style="color: #64748b;">${escapeHtml(product.sku)}</td>
+            <td>${escapeHtml(product.category)}</td>
+            <td>${product.quantity}</td>
+            <td data-price="${product.buying_price || 0}" data-original-price="${product.buying_price || 0}">${formattedBuying}</td>
+            <td data-price="${product.selling_price || 0}" data-original-price="${product.selling_price || 0}">${formattedSelling}</td>
+            <td style="font-weight: 600; color: ${getStatusColor(product.status)};">${product.status}</td>
+            <td data-date="${product.created_date}">${formatDate(product.created_date)}</td>
+            <td class="table-actions" style="text-align: right;">
+                ${actionsHtml}
+            </td>
+        `;
                 tableBody.appendChild(tr);
             });
         }
@@ -393,9 +397,6 @@
                 console.error('Error refreshing status:', error);
             }
         }
-
-        // Set up auto-refresh for product status every 10 seconds
-        setInterval(refreshProductStatus, 10000);
         // Filter products based on search and dropdowns
         function filterProducts() {
             const searchInput = document.querySelector('.search-wrapper input');
