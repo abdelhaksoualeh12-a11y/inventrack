@@ -3,6 +3,9 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Categories | InvenTrack</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
@@ -225,11 +228,11 @@
                     <button title="Edit Category" onclick='editCategory(${JSON.stringify(category)})'><i class="fas fa-edit"></i></button>
                     <button title="Delete Category" class="del" onclick="deleteCategory(${category.id})"><i class="fas fa-trash-alt"></i></button>
                     `;
-                        } else {
-                            actionsHtml = '<span style="color: #94a3b8;">View only</span>';
-                        }
+                } else {
+                    actionsHtml = '<span style="color: #94a3b8;">View only</span>';
+                }
 
-                        tr.innerHTML = `
+                tr.innerHTML = `
                             <td style="font-weight: 600;">${escapeHtml(category.name)}</td>
                             <td style="color: #64748b;">${escapeHtml(category.description || '')}</td>
                             <td>${category.total_products || 0}</td>

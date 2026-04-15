@@ -1,73 +1,100 @@
-// auth.js - Role Based Access Control
+// auth.js - Role Based Access Control with Strict Authentication
 
-document.addEventListener("DOMContentLoaded", () => {
-    // Fetch user role from localStorage
+(function() {
+    // Check authentication immediately before DOM loads
+    const token = localStorage.getItem('token');
     const userRole = localStorage.getItem('userRole');
     const userName = localStorage.getItem('userName');
-    
-    // Security Check: If not logged in and not on login page, redirect
-    if (!userRole && !window.location.pathname.endsWith('index.html')) {
+    const currentPath = window.location.pathname;
+    const isIndexPage = currentPath.endsWith('index.html') || currentPath === '/' || currentPath.endsWith('/');
+    const isLoginPage = currentPath.endsWith('index.html') || currentPath.endsWith('login.html');
+
+    // If not on login page and no token, redirect to login
+    if (!isLoginPage && !token) {
         window.location.href = 'index.html';
         return;
     }
 
-    const currentPath = window.location.pathname;
-
-    // ==========================================
-    // 🛡️ STAFF ROLE PERMISSIONS (View Only)
-    // ==========================================
-    if (userRole === 'Staff') {
-        // Hide Users and Settings
-        const restrictedLinks = document.querySelectorAll('a[href="users.html"], a[href="settings.html"]');
-        restrictedLinks.forEach(link => link.style.display = 'none');
-        
-        // Hide all Add/Edit/Delete buttons across all pages
-        const addProductBtn = document.getElementById('addProdBtn');
-        if (addProductBtn) addProductBtn.style.display = 'none';
-        
-        const addCatBtn = document.getElementById('addCatBtn');
-        if (addCatBtn) addCatBtn.style.display = 'none';
-        
-        const addSupplierBtn = document.getElementById('addSupplierBtn');
-        if (addSupplierBtn) addSupplierBtn.style.display = 'none';
-        
-        const addUserBtn = document.getElementById('addUserBtn');
-        if (addUserBtn) addUserBtn.style.display = 'none';
-        
-        // Hide all Edit and Delete buttons in tables
-        const actionButtons = document.querySelectorAll('.table-actions button, .del, .fa-edit, .fa-trash-alt');
-        actionButtons.forEach(btn => {
-            const button = btn.closest('button') || btn;
-            if (button) button.style.display = 'none';
-        });
-        
-        // Prevent access to Users and Settings pages
-        if (currentPath.includes('users.html') || currentPath.includes('settings.html')) {
-            alert('🚫 Access Denied: You do not have permission to view this page.');
+    // If on login page but already logged in, redirect to dashboard
+    if (isLoginPage && token && userRole) {
+        if (userRole === 'Staff') {
+            window.location.href = 'products.html';
+        } else {
             window.location.href = 'dashboard.html';
         }
+        return;
     }
 
-    // ==========================================
-    // 🛡️ MANAGER ROLE PERMISSIONS
-    // ==========================================
-    if (userRole === 'Manager') {
-        // Only hide Settings (Managers can see Users page)
-        const restrictedLinks = document.querySelectorAll('a[href="settings.html"]');
-        restrictedLinks.forEach(link => link.style.display = 'none');
-        
-        // Prevent access to Settings page only
-        if (currentPath.includes('settings.html')) {
-            alert('🚫 Access Denied: Managers cannot access system settings.');
-            window.location.href = 'dashboard.html';
+    // Only run DOM manipulations after DOM is ready
+    document.addEventListener("DOMContentLoaded", () => {
+        // Double-check authentication for protected pages
+        if (!isIndexPage && !token) {
+            window.location.href = 'index.html';
+            return;
         }
-    }
-    
-    // Admin has full access - no restrictions
-    
-    // Display user name in sidebar if element exists
-    const userNameSpan = document.getElementById('userNameDisplay');
-    if (userNameSpan && userName) {
-        userNameSpan.textContent = `Welcome, ${userName}`;
-    }
-});
+
+        // ==========================================
+        // 🛡️ STAFF ROLE PERMISSIONS (View Only)
+        // ==========================================
+        if (userRole === 'Staff') {
+            // Hide Users and Settings links
+            const restrictedLinks = document.querySelectorAll('a[href="users.html"], a[href="settings.html"]');
+            restrictedLinks.forEach(link => link.style.display = 'none');
+            
+            // Hide all Add buttons
+            const addButtons = [
+                'addProdBtn', 'addCatBtn', 'addSupplierBtn', 'addUserBtn'
+            ];
+            addButtons.forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.style.display = 'none';
+            });
+            
+            // Hide all Edit and Delete buttons in tables (run after small delay to ensure tables are populated)
+            setTimeout(() => {
+                const actionButtons = document.querySelectorAll('.table-actions button, .del, .fa-edit, .fa-trash-alt');
+                actionButtons.forEach(btn => {
+                    const button = btn.closest('button') || btn;
+                    if (button) button.style.display = 'none';
+                });
+            }, 500);
+            
+            // Prevent access to Users and Settings pages
+            if (currentPath.includes('users.html') || currentPath.includes('settings.html')) {
+                alert('🚫 Access Denied: You do not have permission to view this page.');
+                window.location.href = 'dashboard.html';
+            }
+        }
+
+        // ==========================================
+        // 🛡️ MANAGER ROLE PERMISSIONS
+        // ==========================================
+        if (userRole === 'Manager') {
+            // Only hide Settings (Managers can see Users page)
+            const restrictedLinks = document.querySelectorAll('a[href="settings.html"]');
+            restrictedLinks.forEach(link => link.style.display = 'none');
+            
+            // Prevent access to Settings page only
+            if (currentPath.includes('settings.html')) {
+                alert('🚫 Access Denied: Managers cannot access system settings.');
+                window.location.href = 'dashboard.html';
+            }
+        }
+        
+        // Admin has full access - no restrictions
+        
+        // Display user name in sidebar if element exists
+        const userNameSpan = document.getElementById('userNameDisplay');
+        if (userNameSpan && userName) {
+            userNameSpan.innerHTML = `<i class="fas fa-user-circle"></i> Welcome, ${userName}`;
+        }
+    });
+
+    // Also check before page unload
+    window.addEventListener('pageshow', (event) => {
+        const currentToken = localStorage.getItem('token');
+        if (!isIndexPage && !currentToken) {
+            window.location.href = 'index.html';
+        }
+    });
+})();

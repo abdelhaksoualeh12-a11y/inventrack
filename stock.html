@@ -3,6 +3,9 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Stock Management | InvenTrack</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -751,7 +754,7 @@
 
                     if (response.ok) {
                         await loadMovements();
-                        await loadProductsForDropdowns();
+                        await loadProductsAndSuppliersForDropdowns();
                         stockInForm.reset();
                         window.dispatchEvent(new CustomEvent('stockMovementChanged'));
                         alert(`✅ Stock In recorded! Added ${qty} units of ${productName}`);
@@ -816,7 +819,7 @@
 
                     if (response.ok) {
                         await loadMovements();
-                        await loadProductsForDropdowns();
+                        await loadProductsAndSuppliersForDropdowns();
                         stockOutForm.reset();
                         window.dispatchEvent(new CustomEvent('stockMovementChanged'));
                         alert(`✅ Stock Out recorded! Removed ${qty} units of ${productName}\nRemaining stock: ${currentStock - qty}`);
@@ -869,31 +872,27 @@
         // ============ AUTO-REFRESH ============
         let refreshInterval = setInterval(async () => {
             await loadMovements();
-            await loadProductsForDropdowns();
-        }, 30000); // Refresh every 30 seconds
+            await loadProductsAndSuppliersForDropdowns();
+        }, 30000);
 
-        // Clear interval on page unload
         window.addEventListener('beforeunload', () => {
             if (refreshInterval) clearInterval(refreshInterval);
         });
-
-        // Refresh when tab becomes visible
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
                 loadMovements();
-                loadProductsForDropdowns();
+                loadProductsAndSuppliersForDropdowns();
             }
         });
 
-        // Listen for stock movement events from other pages
         window.addEventListener('stockMovementChanged', () => {
             loadMovements();
-            loadProductsForDropdowns();
+            loadProductsAndSuppliersForDropdowns();
         });
 
-        // ============ INITIALIZE ============
+        //  starts everything
         applyStaffRestrictions();
-        loadProductsForDropdowns();
+        loadProductsAndSuppliersForDropdowns();
         loadMovements();
     </script>
 </body>
