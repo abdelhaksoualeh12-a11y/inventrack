@@ -6,60 +6,252 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Users & Roles | InvenTrack</title>
+    <title>Users | InvenTrack</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    <script src="validation.js"></script>
+    <script src="auth.js"></script>
     <style>
-        .toolbar {
+        .users-container {
+            max-width: 900px;
+        }
+
+        .users-header {
             display: flex;
-            flex-wrap: wrap;
             justify-content: space-between;
             align-items: center;
-            background: white;
-            padding: 1.25rem;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
             margin-bottom: 2rem;
+        }
+
+        .users-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+        }
+
+        .user-grid {
+            display: flex;
+            flex-direction: column;
             gap: 1rem;
         }
 
-        .search-wrapper {
-            position: relative;
-            width: 100%;
-            max-width: 300px;
+        .user-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            transition: all 0.2s ease;
         }
 
-        .search-wrapper i {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
+        .user-card:hover {
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+        }
+
+        .user-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.15);
+            flex-shrink: 0;
+        }
+
+        .user-avatar.owner {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .user-avatar.admin {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+
+        .user-avatar.manager {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+        }
+
+        .user-avatar.staff {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-info h3 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .user-info .user-email {
+            margin: 0;
+            color: #64748b;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .user-role-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 0.5rem;
+        }
+
+        .role-owner {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #92400e;
+        }
+
+        .role-admin {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #1e40af;
+        }
+
+        .role-manager {
+            background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+            color: #6b21a8;
+        }
+
+        .role-staff {
+            background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+            color: #334155;
+        }
+
+        .user-meta {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.5rem;
+        }
+
+        .last-login {
+            font-size: 0.8rem;
             color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
         }
 
-        .search-wrapper input {
-            padding-left: 2.5rem;
-            width: 100%;
+        .user-actions {
+            display: flex;
+            gap: 0.5rem;
         }
 
-        .table-actions button {
+        .user-actions button {
             background: transparent;
             border: none;
+            color: #94a3b8;
+            padding: 0.5rem;
+            border-radius: 8px;
             cursor: pointer;
-            color: #64748b;
-            font-size: 1.1rem;
-            transition: color 0.2s;
-            margin-right: 0.5rem;
-            padding: 0;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
         }
 
-        .table-actions button:hover {
+        .user-actions button:hover {
+            background: #eff6ff;
             color: #3b82f6;
         }
 
-        .table-actions button.del:hover {
+        .user-actions button.del:hover {
+            background: #fee2e2;
             color: #ef4444;
+        }
+
+        .status-badge {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.25rem;
+        }
+
+        .status-active {
+            background: #10b981;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+        }
+
+        .status-inactive {
+            background: #ef4444;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+        }
+
+        .add-user-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+        }
+
+        .add-user-btn:hover {
+            background: #2563eb;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .logged-in-as {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: #f8fafc;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .logged-in-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .logged-in-info {
+            flex: 1;
+        }
+
+        .logged-in-info p {
+            margin: 0;
+            font-weight: 500;
+            color: #0f172a;
+        }
+
+        .logged-in-info span {
+            font-size: 0.8rem;
+            color: #64748b;
         }
 
         /* Modal Styles */
@@ -67,7 +259,7 @@
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(15, 23, 42, 0.6);
+            background: rgba(15, 23, 42, 0.5);
             backdrop-filter: blur(4px);
             align-items: center;
             justify-content: center;
@@ -80,48 +272,35 @@
 
         .modal-content {
             background: white;
-            padding: 2.5rem;
-            border-radius: 16px;
+            padding: 2rem;
+            border-radius: 20px;
             width: 100%;
-            max-width: 500px;
+            max-width: 480px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
             position: relative;
-            max-height: 90vh;
-            overflow-y: auto;
         }
 
         .close-modal {
             position: absolute;
-            top: 1.5rem;
-            right: 1.5rem;
+            top: 1.25rem;
+            right: 1.25rem;
             cursor: pointer;
             color: #94a3b8;
             font-size: 1.25rem;
             transition: 0.2s;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
         }
 
         .close-modal:hover {
+            background: #f1f5f9;
             color: #ef4444;
         }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-
-        .checkbox-group input {
-            width: auto;
-            margin-right: 0.5rem;
-        }
-
-        .checkbox-group label {
-            margin-bottom: 0;
-            font-weight: normal;
-            font-size: 0.9rem;
-        }
     </style>
-    <script src="auth.js"></script>
 </head>
 
 <body>
@@ -130,61 +309,57 @@
         <a href="dashboard.html"><i class="fas fa-chart-line"></i> Dashboard</a>
         <a href="products.html"><i class="fas fa-box"></i> Products</a>
         <a href="categories.html"><i class="fas fa-tags"></i> Categories</a>
-        <a href="stock.html"><i class="fas fa-exchange-alt"></i> Stock</a>
+        <a href="stock.html"><i class="fas fa-exchange-alt"></i> Stock Ops</a>
         <a href="suppliers.html"><i class="fas fa-truck-loading"></i> Suppliers</a>
-        <a href="reports.html"><i class="fas fa-file-invoice"></i> Reports</a>
+        <a href="reports.html"><i class="fas fa-chart-pie"></i> Sales</a>
         <a href="prediction.html"><i class="fas fa-chart-scatter"></i> Predictions</a>
-        <a href="users.html" class="active"><i class="fas fa-users-cog"></i> Users & Roles</a>
+        <a href="alerts.html"><i class="fas fa-bell"></i> Alerts</a>
+        <a href="users.html"><i class="fas fa-users-cog"></i> Users</a>
         <a href="settings.html"><i class="fas fa-cog"></i> Settings</a>
         <a href="change-password.html"><i class="fas fa-key"></i> Change Password</a>
-        <a href="index.html" style="margin-top: auto; border-top: 1px solid #1e293b; color: #ef4444;"><i
+        <a href="index.html" style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); color: #ef4444;"><i
                 class="fas fa-sign-out-alt"></i> Logout</a>
     </aside>
 
     <main class="main-content">
-        <h1 class="page-header">Users & Permissions</h1>
-
-        <div class="toolbar">
-            <div class="search-wrapper">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Search users...">
+        <div class="users-container">
+            <!-- Logged in as -->
+            <div class="logged-in-as">
+                <div class="logged-in-avatar">
+                    <span id="loggedInInitials">AD</span>
+                </div>
+                <div class="logged-in-info">
+                    <p id="loggedInName">Loading...</p>
+                    <span id="loggedInRole">Administrator</span>
+                </div>
             </div>
-            <button id="addUserBtn" class="btn-primary" style="width: auto;"><i class="fas fa-user-plus"></i> Add
-                User</button>
+
+            <div class="users-header">
+                <h1>User Management</h1>
+                <button class="add-user-btn" id="addUserBtn">
+                    <i class="fas fa-plus"></i> Add User
+                </button>
+            </div>
+
+            <div class="user-grid" id="userGrid">
+                <!-- Users will be loaded here -->
+            </div>
         </div>
-
-        <section class="box-section">
-            <div style="overflow-x: auto;">
-                <table style="min-width: 600px;">
-                    <thead>
-                        <tr>
-                            <th>User Name</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Status</th>
-                            <th style="text-align: right;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="userTableBody">
-                    </tbody>
-                </table>
-            </div>
-        </section>
     </main>
 
-    <!-- Modal -->
+    <!-- Add/Edit User Modal -->
     <div id="userModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" id="closeModalBtn"><i class="fas fa-times"></i></span>
-            <h2 id="modalTitle" style="margin-top: 0; margin-bottom: 1.5rem; color: #0f172a;">Add New User</h2>
+            <h2 id="modalTitle" style="margin-top: 0; margin-bottom: 1.5rem; font-weight: 600;">Add New User</h2>
             <form id="userForm">
                 <div class="form-group">
                     <label>Full Name</label>
-                    <input type="text" id="userName" required placeholder="e.g. Ali Ahmad">
+                    <input type="text" id="userName" required placeholder="e.g. John Worker">
                 </div>
                 <div class="form-group">
                     <label>Email Address</label>
-                    <input type="email" id="userEmail" required placeholder="ali@example.com">
+                    <input type="email" id="userEmail" required placeholder="john@inventrack.com">
                 </div>
                 <div class="form-group" style="display: flex; gap: 1rem;">
                     <div style="flex: 1;">
@@ -192,6 +367,7 @@
                         <select id="userRole" required>
                             <option value="Staff">Staff</option>
                             <option value="Manager">Manager</option>
+                            <option value="Administrator">Administrator</option>
                         </select>
                     </div>
                     <div style="flex: 1;">
@@ -205,10 +381,12 @@
                 <div class="form-group">
                     <label>Password</label>
                     <input type="password" id="userPassword" placeholder="Leave empty for default (password123)">
-                    <small style="color: #64748b;">Leave blank to use default password (password123)</small>
+                    <small style="color: #64748b; font-size: 0.8rem;">Leave blank to use default password</small>
                 </div>
                 <button type="submit" class="btn-primary"
-                    style="margin-top: 1.5rem; padding: 0.8rem; font-size: 1.1rem;">Save User</button>
+                    style="width: 100%; margin-top: 1rem; justify-content: center; padding: 0.875rem;">
+                    Save User
+                </button>
             </form>
         </div>
     </div>
@@ -219,101 +397,128 @@
         const addBtn = document.getElementById('addUserBtn');
         const closeBtn = document.getElementById('closeModalBtn');
         const form = document.getElementById('userForm');
-        const tableBody = document.getElementById('userTableBody');
+        const userGrid = document.getElementById('userGrid');
         const modalTitle = document.getElementById('modalTitle');
 
         let editingId = null;
         const currentUserRole = localStorage.getItem('userRole');
         const currentUserId = parseInt(localStorage.getItem('userId'));
+        const currentUserName = localStorage.getItem('userName');
 
-        // Apply role-based restrictions on page load
+        // Display logged in user
+        document.getElementById('loggedInName').textContent = currentUserName || 'User';
+        document.getElementById('loggedInRole').textContent = currentUserRole || 'User';
+        if (currentUserName) {
+            const initials = currentUserName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+            document.getElementById('loggedInInitials').textContent = initials;
+        }
+
+        // Apply role-based restrictions
         function applyRoleRestrictions() {
             if (currentUserRole === 'Manager') {
-                // Managers can only add Staff users
                 const roleSelect = document.getElementById('userRole');
                 if (roleSelect) {
                     roleSelect.innerHTML = '<option value="Staff">Staff</option>';
                 }
-
-                // Hide the "Add User" button? No, let them add Staff users
-                // But maybe show a message
-                const toolbar = document.querySelector('.toolbar');
-                if (toolbar && !document.querySelector('.manager-info')) {
-                    const infoDiv = document.createElement('div');
-                    infoDiv.className = 'manager-info';
-                    infoDiv.style.cssText = 'background: #fef3c7; padding: 0.5rem 1rem; border-radius: 8px; margin-bottom: 1rem; color: #d97706; font-size: 0.9rem;';
-                    infoDiv.innerHTML = '<i class="fas fa-info-circle"></i> As Manager, you can only add and manage Staff users.';
-                    toolbar.parentNode.insertBefore(infoDiv, toolbar.nextSibling);
-                }
             }
         }
 
-        // Load users from backend with role-based filtering
+        // Get role badge class
+        function getRoleBadgeClass(role) {
+            switch (role) {
+                case 'Administrator': return 'role-admin';
+                case 'Manager': return 'role-manager';
+                case 'Staff': return 'role-staff';
+                default: return 'role-staff';
+            }
+        }
+
+        // Get avatar class
+        function getAvatarClass(role) {
+            switch (role) {
+                case 'Administrator': return 'admin';
+                case 'Manager': return 'manager';
+                case 'Staff': return 'staff';
+                default: return 'staff';
+            }
+        }
+
+        // Get initials
+        function getInitials(name) {
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+        }
+
+        // Load users
         async function loadUsers() {
             try {
                 const response = await fetch(`${API_URL}/users`);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 let users = await response.json();
 
-                // Filter users based on role
                 if (currentUserRole === 'Manager') {
-                    // Managers only see Staff users
                     users = users.filter(user => user.role === 'Staff');
                 }
 
-                tableBody.innerHTML = '';
                 if (users.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No users found</td></tr>';
+                    userGrid.innerHTML = '<div style="text-align: center; padding: 3rem; color: #94a3b8;">No users found</div>';
                     return;
                 }
 
-                users.forEach(user => {
-                    const tr = document.createElement('tr');
-                    let roleBadge = '';
-                    if (user.role === 'Administrator') roleBadge = '<span class="badge" style="background:#e0e7ff; color:#4f46e5;">Administrator</span>';
-                    else if (user.role === 'Manager') roleBadge = '<span class="badge" style="background:#fef3c7; color:#d97706;">Manager</span>';
-                    else roleBadge = '<span class="badge" style="background:#f1f5f9; color:#475569;">Staff</span>';
-
-                    const statusBadge = user.status === 'Active'
-                        ? '<span class="badge badge-success">Active</span>'
-                        : '<span class="badge badge-error">Inactive</span>';
-
-                    // Hide edit/delete buttons for:
-                    // 1. Admin users when logged in as Manager
-                    // 2. Own account (can't delete self)
+                userGrid.innerHTML = users.map(user => {
                     const isOwnAccount = currentUserId === user.id;
                     const isAdmin = user.role === 'Administrator';
                     const isManager = user.role === 'Manager';
                     const showActions = !isOwnAccount && !(currentUserRole === 'Manager' && (isAdmin || isManager));
 
+                    const roleBadgeClass = getRoleBadgeClass(user.role);
+                    const avatarClass = getAvatarClass(user.role);
+                    const initials = getInitials(user.name);
+                    const statusClass = user.status === 'Active' ? 'status-active' : 'status-inactive';
+
+                    // Mock last login (you can add this field to your database later)
+                    const lastLogin = user.last_login || '2024-03-15';
+
                     let actionsHtml = '';
                     if (showActions) {
                         actionsHtml = `
-                        <button title="Edit" onclick='editUser(${JSON.stringify(user)})'><i class="fas fa-edit"></i></button>
-                        <button title="Delete" class="del" onclick="deleteUser(${user.id})"><i class="fas fa-trash-alt"></i></button>
-                    `;
+                            <div class="user-actions">
+                                <button onclick='editUser(${JSON.stringify(user).replace(/'/g, "&apos;")})' title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="del" onclick="deleteUser(${user.id})" title="Delete">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        `;
                     } else if (isOwnAccount) {
-                        actionsHtml = '<span style="color: #94a3b8;">(You)</span>';
-                    } else {
-                        actionsHtml = '<span style="color: #94a3b8;">Restricted</span>';
+                        actionsHtml = '<span style="color: #94a3b8; font-size: 0.8rem;">(You)</span>';
                     }
 
-                    tr.innerHTML = `
-                    <td style="font-weight: 600; color: #0f172a;">${escapeHtml(user.name)}</td>
-                    <td>${escapeHtml(user.email)}</td>
-                    <td>${roleBadge}</td>
-                    <td>${statusBadge}</td>
-                    <td class="table-actions" style="text-align: right;">
-                        ${actionsHtml}
-                    </td>
-                `;
-                    tableBody.appendChild(tr);
-                });
+                    return `
+                        <div class="user-card">
+                            <div class="user-avatar ${avatarClass}">
+                                ${initials}
+                            </div>
+                            <div class="user-info">
+                                <h3>${escapeHtml(user.name)}</h3>
+                                <p class="user-email">
+                                    <span class="status-badge ${statusClass}"></span>
+                                    ${escapeHtml(user.email)}
+                                </p>
+                                <span class="user-role-badge ${roleBadgeClass}">${user.role}</span>
+                            </div>
+                            <div class="user-meta">
+                                <span class="last-login">
+                                    <i class="far fa-clock"></i> Last login: ${lastLogin}
+                                </span>
+                                ${actionsHtml}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
             } catch (error) {
                 console.error('Error loading users:', error);
-                tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">Error loading users: ${error.message}</td></tr>`;
+                userGrid.innerHTML = '<div style="text-align: center; padding: 3rem; color: #ef4444;">Error loading users</div>';
             }
         }
 
@@ -327,7 +532,7 @@
             });
         }
 
-        // Add/Update user
+        // Form submit
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -358,13 +563,12 @@
                 if (response.ok) {
                     const data = await response.json();
                     if (data.temporaryPassword) {
-                        alert(`User created! Temporary password: ${data.temporaryPassword}\nPlease ask them to change it on first login.`);
+                        alert(`User created! Temporary password: ${data.temporaryPassword}`);
                     }
                     await loadUsers();
                     modal.classList.remove('active');
                     form.reset();
                     editingId = null;
-                    // Reapply role restrictions after modal close
                     applyRoleRestrictions();
                 } else {
                     const error = await response.json();
@@ -384,7 +588,6 @@
                         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                     });
                     if (response.ok) {
-                        alert('User deleted successfully');
                         await loadUsers();
                     } else {
                         const error = await response.json();
@@ -416,6 +619,9 @@
         });
 
         closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) modal.classList.remove('active');
+        });
 
         // Initialize
         applyRoleRestrictions();

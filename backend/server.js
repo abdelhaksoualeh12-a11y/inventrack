@@ -542,5 +542,39 @@ app.delete('/api/users/:id', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+// ============ REPORTS ============
+app.get('/api/reports/monthly-stock-flow', async (req, res) => {
+    try {
+        const rows = await db.all(`
+            SELECT 
+                TO_CHAR(date, 'YYYY-MM') as month,
+                SUM(CASE WHEN type = 'IN' THEN quantity ELSE 0 END) as stock_in,
+                SUM(CASE WHEN type = 'OUT' THEN quantity ELSE 0 END) as stock_out
+            FROM stock_movements
+            GROUP BY TO_CHAR(date, 'YYYY-MM')
+            ORDER BY month DESC
+            LIMIT 12
+        `, []);
+        res.json(rows || []);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
+app.get('/api/reports/valuation-by-category', async (req, res) => {
+    try {
+        const rows = await db.all(`
+            SELECT 
+                category,
+                SUM(quantity) as total_units,
+                SUM(quantity * price) as estimated_value
+            FROM products
+            GROUP BY category
+            ORDER BY estimated_value DESC
+        `, []);
+        res.json(rows || []);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 app.listen(PORT, () => console.log(`Server on port ${PORT}`));

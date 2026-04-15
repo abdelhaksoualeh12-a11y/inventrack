@@ -276,8 +276,13 @@
         }
 
         @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .ai-badge {
@@ -294,13 +299,13 @@
             .two-column-layout {
                 grid-template-columns: 1fr;
             }
-            
+
             .main-prediction-header {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 1rem;
             }
-            
+
             .prediction-stats {
                 width: 100%;
                 justify-content: space-around;
@@ -315,14 +320,15 @@
         <a href="dashboard.html"><i class="fas fa-chart-line"></i> Dashboard</a>
         <a href="products.html"><i class="fas fa-box"></i> Products</a>
         <a href="categories.html"><i class="fas fa-tags"></i> Categories</a>
-        <a href="stock.html"><i class="fas fa-exchange-alt"></i> Stock</a>
+        <a href="stock.html"><i class="fas fa-exchange-alt"></i> Stock Ops</a>
         <a href="suppliers.html"><i class="fas fa-truck-loading"></i> Suppliers</a>
-        <a href="reports.html"><i class="fas fa-file-invoice"></i> Reports</a>
-        <a href="prediction.html" class="active"><i class="fas fa-chart-scatter"></i> Predictions</a>
-        <a href="users.html"><i class="fas fa-users-cog"></i> Users & Roles</a>
+        <a href="reports.html"><i class="fas fa-chart-pie"></i> Sales</a>
+        <a href="prediction.html"><i class="fas fa-chart-scatter"></i> Predictions</a>
+        <a href="alerts.html"><i class="fas fa-bell"></i> Alerts</a>
+        <a href="users.html"><i class="fas fa-users-cog"></i> Users</a>
         <a href="settings.html"><i class="fas fa-cog"></i> Settings</a>
         <a href="change-password.html"><i class="fas fa-key"></i> Change Password</a>
-        <a href="index.html" style="margin-top: auto; border-top: 1px solid #1e293b; color: #ef4444;"><i
+        <a href="index.html" style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); color: #ef4444;"><i
                 class="fas fa-sign-out-alt"></i> Logout</a>
     </aside>
 
@@ -426,7 +432,7 @@
 
     <script>
         const API_URL = 'https://inventrack-backend-2wso.onrender.com/api';
-        
+
         let mainChart = null;
         let productChart = null;
         let allProducts = [];
@@ -435,7 +441,7 @@
 
         // ============ SIMPLE PREDICTION ALGORITHM ============
         // This uses moving averages and trend analysis (no external API needed)
-        
+
         function calculateMovingAverage(data, windowSize) {
             const result = [];
             for (let i = 0; i < data.length; i++) {
@@ -451,13 +457,13 @@
             if (data.length < 2) return 0;
             const x = Array.from({ length: data.length }, (_, i) => i);
             const y = data;
-            
+
             const n = data.length;
             const sumX = x.reduce((a, b) => a + b, 0);
             const sumY = y.reduce((a, b) => a + b, 0);
             const sumXY = x.reduce((a, b, i) => a + b * y[i], 0);
             const sumX2 = x.reduce((a, b) => a + b * b, 0);
-            
+
             const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
             return slope;
         }
@@ -466,24 +472,24 @@
             const trend = calculateTrend(data);
             const lastValue = data[data.length - 1] || 0;
             const predictions = [];
-            
+
             for (let i = 1; i <= daysToPredict; i++) {
                 let predicted = lastValue + trend * i;
                 predicted = Math.max(0, predicted);
                 predictions.push(predicted);
             }
-            
+
             return predictions;
         }
 
         function calculateConfidence(data) {
             if (data.length < 5) return 'low';
-            
+
             // Calculate coefficient of variation
             const mean = data.reduce((a, b) => a + b, 0) / data.length;
             const variance = data.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / data.length;
             const cv = Math.sqrt(variance) / mean;
-            
+
             if (cv < 0.3) return 'high';
             if (cv < 0.6) return 'medium';
             return 'low';
@@ -495,17 +501,17 @@
                 // Load products
                 const productsRes = await fetch(`${API_URL}/products`);
                 allProducts = await productsRes.json();
-                
+
                 // Load stock movements
                 const movementsRes = await fetch(`${API_URL}/stock-movements`);
                 stockMovements = await movementsRes.json();
-                
+
                 // Populate product select
                 populateProductSelect();
-                
+
                 // Generate predictions
                 generatePredictions();
-                
+
             } catch (error) {
                 console.error('Error loading data:', error);
             }
@@ -514,7 +520,7 @@
         function populateProductSelect() {
             const select = document.getElementById('productSelect');
             select.innerHTML = '<option value="">-- Select a Product --</option>';
-            
+
             allProducts.sort((a, b) => a.name.localeCompare(b.name)).forEach(product => {
                 const option = document.createElement('option');
                 option.value = product.id;
@@ -526,37 +532,37 @@
         // ============ GENERATE PREDICTIONS ============
         function generatePredictions() {
             predictions = {};
-            
+
             allProducts.forEach(product => {
                 // Get sales history for this product
                 const productSales = stockMovements
                     .filter(m => m.product_id === product.id && m.type === 'OUT')
                     .sort((a, b) => new Date(a.date) - new Date(b.date));
-                
+
                 // Group by date
                 const salesByDate = {};
                 productSales.forEach(sale => {
                     const date = sale.date;
                     salesByDate[date] = (salesByDate[date] || 0) + sale.quantity;
                 });
-                
+
                 // Convert to array of daily sales
                 const dates = Object.keys(salesByDate).sort();
                 const dailySales = dates.map(d => salesByDate[d]);
-                
+
                 // Calculate predictions
-                const weeklyDemand = dailySales.length > 0 
+                const weeklyDemand = dailySales.length > 0
                     ? dailySales.reduce((a, b) => a + b, 0) / (dailySales.length / 7) || 0
                     : 0;
-                
+
                 const dailyDemand = weeklyDemand / 7;
-                const daysUntilStockout = dailyDemand > 0 
+                const daysUntilStockout = dailyDemand > 0
                     ? Math.floor(product.quantity / dailyDemand)
                     : 999;
-                
+
                 const suggestedOrder = Math.max(0, Math.ceil(weeklyDemand * 2 - product.quantity));
                 const confidence = calculateConfidence(dailySales);
-                
+
                 predictions[product.id] = {
                     productId: product.id,
                     productName: product.name,
@@ -570,7 +576,7 @@
                     trend: calculateTrend(dailySales)
                 };
             });
-            
+
             // Update UI
             renderMainPrediction();
             renderRestockTable();
@@ -579,9 +585,9 @@
         // ============ RENDER MAIN PREDICTION CHART ============
         function renderMainPrediction() {
             const ctx = document.getElementById('mainPredictionChart').getContext('2d');
-            
+
             if (mainChart) mainChart.destroy();
-            
+
             // Aggregate all sales for overall forecast
             const allSalesByDate = {};
             stockMovements
@@ -590,13 +596,13 @@
                     const date = m.date;
                     allSalesByDate[date] = (allSalesByDate[date] || 0) + m.quantity;
                 });
-            
+
             const dates = Object.keys(allSalesByDate).sort();
             const historicalData = dates.slice(-30).map(d => allSalesByDate[d]);
-            
+
             // Predict next 30 days
             const predictedData = predictFuture(historicalData, 30);
-            
+
             // Create labels
             const labels = [];
             const today = new Date();
@@ -605,14 +611,14 @@
                 date.setDate(today.getDate() + i);
                 labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
             }
-            
+
             // Combine historical and predicted
             const combinedData = [
                 ...historicalData,
                 ...Array(30 - historicalData.length).fill(null),
                 ...predictedData
             ];
-            
+
             mainChart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -672,45 +678,45 @@
                     }
                 }
             });
-            
+
             // Update stats
             const totalHistorical = historicalData.reduce((a, b) => a + b, 0);
             const totalPredicted = predictedData.reduce((a, b) => a + b, 0);
-            
+
             document.getElementById('predictedDemand').textContent = Math.round(totalPredicted);
-            
+
             // Calculate accuracy based on data consistency
             const accuracy = Math.min(95, Math.round(70 + (historicalData.length / 100) * 25));
             document.getElementById('forecastAccuracy').textContent = accuracy + '%';
         }
 
         // ============ RENDER PRODUCT PREDICTION ============
-        window.loadProductPrediction = function() {
+        window.loadProductPrediction = function () {
             const productId = parseInt(document.getElementById('productSelect').value);
             if (!productId) return;
-            
+
             const prediction = predictions[productId];
             if (!prediction) return;
-            
+
             const ctx = document.getElementById('productPredictionChart').getContext('2d');
             if (productChart) productChart.destroy();
-            
+
             const historicalData = prediction.dailySales.slice(-14);
             const predictedData = predictFuture(historicalData, 14);
-            
+
             const labels = [];
             for (let i = -14; i < 14; i++) {
                 const date = new Date();
                 date.setDate(date.getDate() + i);
                 labels.push(date.toLocaleDateString('en-US', { weekday: 'short' }));
             }
-            
+
             const combinedData = [
                 ...historicalData,
                 ...Array(14 - historicalData.length).fill(null),
                 ...predictedData
             ];
-            
+
             productChart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -747,7 +753,7 @@
                     }
                 }
             });
-            
+
             // Update summary
             const summaryValues = document.querySelectorAll('#productPredictionSummary .summary-value');
             summaryValues[0].textContent = prediction.currentStock;
@@ -758,7 +764,7 @@
         // ============ RENDER RESTOCK TABLE ============
         function renderRestockTable() {
             const tbody = document.getElementById('restockTableBody');
-            
+
             // Sort by urgency (low stock first, then by suggested order)
             const sortedPredictions = Object.values(predictions)
                 .sort((a, b) => {
@@ -766,23 +772,23 @@
                     if (b.daysUntilStockout === 999 && a.daysUntilStockout !== 999) return -1;
                     return a.daysUntilStockout - b.daysUntilStockout;
                 });
-            
+
             if (sortedPredictions.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 2rem;">No data available</td></tr>';
                 return;
             }
-            
+
             tbody.innerHTML = sortedPredictions.map(p => {
                 let confidenceClass = '';
                 if (p.confidence === 'high') confidenceClass = 'confidence-high';
                 else if (p.confidence === 'medium') confidenceClass = 'confidence-medium';
                 else confidenceClass = 'confidence-low';
-                
+
                 let trendIcon = '';
                 if (p.trend > 0.5) trendIcon = '<i class="fas fa-arrow-up trend-up"></i>';
                 else if (p.trend < -0.5) trendIcon = '<i class="fas fa-arrow-down trend-down"></i>';
                 else trendIcon = '<i class="fas fa-minus trend-stable"></i>';
-                
+
                 return `
                     <tr>
                         <td>
@@ -802,13 +808,13 @@
         }
 
         // ============ REFRESH ALL ============
-        window.refreshAllPredictions = async function() {
+        window.refreshAllPredictions = async function () {
             const btn = document.querySelector('.refresh-btn');
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
             btn.disabled = true;
-            
+
             await loadAllData();
-            
+
             btn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Predictions';
             btn.disabled = false;
         };
@@ -816,7 +822,7 @@
         // ============ HELPER FUNCTIONS ============
         function escapeHtml(str) {
             if (!str) return '';
-            return str.replace(/[&<>]/g, function(m) {
+            return str.replace(/[&<>]/g, function (m) {
                 if (m === '&') return '&amp;';
                 if (m === '<') return '&lt;';
                 if (m === '>') return '&gt;';
