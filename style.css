@@ -314,3 +314,304 @@ button i { margin-right: 6px; }
     /* Generic flex overrides for tight spots */
     div[style*="justify-content: space-between"] { flex-wrap: wrap; gap: 1rem; }
 }
+/* Add these responsive enhancements to style.css */
+
+/* Improved Viewport Meta - Add to all HTML files */
+/* <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes"> */
+
+/* Fluid Typography */
+html {
+    font-size: 16px;
+}
+
+@media screen and (max-width: 480px) {
+    html {
+        font-size: 14px;
+    }
+}
+
+@media screen and (min-width: 1440px) {
+    html {
+        font-size: 18px;
+    }
+}
+
+/* Responsive Container Widths */
+.main-content {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* Improved Card Responsiveness */
+.box-section {
+    padding: clamp(1rem, 4vw, 2rem);
+    margin-bottom: clamp(1rem, 4vw, 2rem);
+}
+
+/* Responsive Grid Improvements */
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(1rem, 3vw, 2rem);
+}
+
+@media screen and (min-width: 768px) {
+    .grid-2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.grid-3 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(1rem, 3vw, 1.5rem);
+}
+
+@media screen and (min-width: 640px) {
+    .grid-3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media screen and (min-width: 1024px) {
+    .grid-3 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Responsive Tables */
+table {
+    display: table;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media screen and (max-width: 768px) {
+    .box-section {
+        overflow-x: auto;
+    }
+    
+    table {
+        min-width: 600px;
+    }
+}
+
+/* Responsive Forms */
+input, select, textarea {
+    font-size: clamp(0.875rem, 2.5vw, 1rem);
+    padding: clamp(0.5rem, 2vw, 0.75rem) clamp(0.75rem, 2.5vw, 1rem);
+}
+
+/* Responsive Buttons */
+button, .btn-primary, .btn-outline, .btn-delete {
+    padding: clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem);
+    font-size: clamp(0.875rem, 2.5vw, 1rem);
+    white-space: nowrap;
+}
+
+@media screen and (max-width: 480px) {
+    button, .btn-primary, .btn-outline, .btn-delete {
+        width: 100%;
+        white-space: normal;
+    }
+}
+
+/* Responsive Sidebar Improvements */
+@media screen and (max-width: 1024px) {
+    .sidebar {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+    
+    .sidebar a {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.8125rem;
+    }
+    
+    .sidebar a i {
+        margin-right: 0.25rem;
+    }
+}
+
+@media screen and (max-width: 640px) {
+    .sidebar a {
+        flex: 1 1 100%;
+        text-align: left;
+        padding: 0.625rem 1rem;
+    }
+    
+    .sidebar a i {
+        display: inline-block;
+        margin-right: 0.75rem;
+        width: 1.5rem;
+    }
+}
+
+/* Responsive Modals */
+.modal-content {
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: clamp(1.25rem, 4vw, 2.5rem);
+}
+
+@media screen and (max-width: 480px) {
+    .modal-content {
+        width: 95%;
+        padding: 1.25rem;
+    }
+}
+
+/* Responsive Dashboard Cards */
+.card-stats {
+    padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+.card-stats .value {
+    font-size: clamp(1.75rem, 5vw, 2.5rem);
+}
+
+.card-stats h3 {
+    font-size: clamp(0.75rem, 2vw, 0.85rem);
+}
+
+/* Toolbar Responsiveness */
+.toolbar {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+@media screen and (min-width: 640px) {
+    .toolbar {
+        flex-direction: row;
+        align-items: center;
+    }
+}
+
+.toolbar-group {
+    flex-wrap: wrap;
+}
+
+@media screen and (max-width: 480px) {
+    .toolbar-group {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .toolbar-group input,
+    .toolbar-group select {
+        width: 100%;
+    }
+}
+
+/* Search Wrapper Responsiveness */
+.search-wrapper {
+    max-width: 100%;
+}
+
+@media screen and (min-width: 640px) {
+    .search-wrapper {
+        max-width: 300px;
+    }
+}
+
+/* Page Header Responsiveness */
+.page-header {
+    font-size: clamp(1.5rem, 5vw, 2rem);
+    margin-bottom: clamp(1rem, 4vw, 2rem);
+}
+
+/* Chart Container Responsiveness */
+canvas {
+    max-height: 400px;
+    width: 100% !important;
+}
+
+@media screen and (max-width: 768px) {
+    canvas {
+        max-height: 300px;
+    }
+}
+
+/* Utility Classes for Responsive Spacing */
+.responsive-padding {
+    padding: clamp(0.75rem, 3vw, 2rem);
+}
+
+.responsive-margin {
+    margin: clamp(0.75rem, 3vw, 2rem);
+}
+
+.responsive-gap {
+    gap: clamp(0.5rem, 2vw, 1.5rem);
+}
+
+/* Fix for iOS input zoom */
+@media screen and (max-width: 768px) {
+    input, select, textarea {
+        font-size: 16px !important; /* Prevents zoom on focus in iOS */
+    }
+}
+
+/* Print Styles */
+@media print {
+    .sidebar, .toolbar, button, .btn-primary, .btn-outline, .btn-delete, .modal {
+        display: none !important;
+    }
+    
+    .main-content {
+        margin-left: 0 !important;
+        padding: 1rem !important;
+        width: 100% !important;
+    }
+    
+    .box-section {
+        box-shadow: none !important;
+        border: 1px solid #e2e8f0 !important;
+        page-break-inside: avoid;
+    }
+    
+    table {
+        border-collapse: collapse !important;
+    }
+    
+    th, td {
+        border: 1px solid #e2e8f0 !important;
+    }
+}
+
+/* Accessibility - Focus States */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+/* Smooth Scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Loading States */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Empty State Styling */
+.empty-state {
+    text-align: center;
+    padding: clamp(2rem, 8vw, 4rem) 1rem;
+    color: #94a3b8;
+}
+
+.empty-state i {
+    font-size: clamp(2rem, 8vw, 4rem);
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
