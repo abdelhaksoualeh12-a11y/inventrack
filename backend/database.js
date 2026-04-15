@@ -81,6 +81,17 @@ async function initDatabase() {
                 created_date DATE DEFAULT CURRENT_DATE
             )
         `);
+        try {
+            // Remove old price column if it exists
+            await pool.query(`ALTER TABLE products DROP COLUMN IF EXISTS price`);
+            await pool.query(`ALTER TABLE products ALTER COLUMN buying_price SET DEFAULT 0`);
+            await pool.query(`ALTER TABLE products ALTER COLUMN selling_price SET DEFAULT 0`);
+            await pool.query(`UPDATE products SET buying_price = 0 WHERE buying_price IS NULL`);
+            await pool.query(`UPDATE products SET selling_price = 0 WHERE selling_price IS NULL`);
+            console.log('✅ Products table columns fixed');
+        } catch (err) {
+            console.log('Fix skipped:', err.message);
+        }
         await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS buying_price DECIMAL(10,2) DEFAULT 0`);
         await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS selling_price DECIMAL(10,2) DEFAULT 0`);
         await pool.query(`ALTER TABLE products RENAME COLUMN price TO selling_price`).catch(() => { });
