@@ -275,6 +275,7 @@ app.post('/api/stock-movements', async (req, res) => {
             const reasonMatch = details.match(/Reason: (.+)/);
             reason = reasonMatch ? reasonMatch[1] : null;
             isSale = reason === 'Sale';
+            console.log(`Stock OUT - Reason: ${reason}, isSale: ${isSale}`); // Debug
         }
 
         const result = await db.run(
@@ -652,24 +653,46 @@ app.get('/api/reports/valuation-by-category', async (req, res) => {
 // ============ FORGOT PASSWORD ============
 app.post('/api/forgot-password', async (req, res) => {
     const { email } = req.body;
-    
+
     try {
         const user = await db.get("SELECT * FROM users WHERE email = $1", [email]);
-        
+
         if (!user) {
             return res.status(404).json({ error: 'No account found with this email address' });
         }
         console.log(`[PASSWORD RECOVERY] Email: ${email}, Password: [HIDDEN]`);
-        
-        res.json({ 
+
+        res.json({
             message: `Password recovery email sent to ${email}. Please check your inbox. (Demo: For production, an email would be sent)`,
             // Only for demo - in production, NEVER return the password!
             demo_password: 'admin123' // Default password for demo accounts
         });
-        
+
     } catch (error) {
         console.error('Forgot password error:', error);
         res.status(500).json({ error: 'Internal server error' });
+    }
+});
+// Debug endpoint to check sales_profit table
+app.get('/api/debug/sales-profit', async (req, res) => {
+    try {
+        const allRecords = await db.all("SELECT * FROM sales_profit ORDER BY sale_date DESC LIMIT 20", []);
+        const summary = await db.get(`
+            SELECT 
+                COUNT(*) as total_records,
+                SUM(CASE WHEN transaction_type = 'SALE' THEN total_profit ELSE 0 END) as sale_profit,
+                SUM(CASE WHEN transaction_type = 'PURCHASE' THEN total_profit ELSE 0 END) as purchase_cost,
+                SUM(total_profit) as net_profit,
+                SUM(CASE WHEN transaction_type = 'SALE' THEN total_revenue ELSE 0 END) as total_revenue
+            FROM sales_profit
+        `, []);
+        res.json({
+            allRecords,
+            summary,
+            message: 'Check if you have any SALE records with transaction_type = "SALE"'
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 });
 app.listen(PORT, () => console.log(`Server on port ${PORT}`));
